@@ -1,44 +1,53 @@
--- Table Photo : On stocke la clé S3 (SeaweedFS)
+-- 1. Table Photo (Stockage brut)
 CREATE TABLE photo (
-    id UUID PRIMARY KEY,
-    owner_id UUID NOT NULL, -- ID venant du service Identity
-    mime_type VARCHAR(50) NOT NULL,
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    owner_id UUID NOT NULL, 
+    mime_type VARCHAR(50) NOT NULL, -- Type de média (JPG, PNG)
     taille_mo DECIMAL(10, 2) NOT NULL,
-    nom_original VARCHAR(255) NOT NULL,
-    cle_s3 VARCHAR(255) NOT NULL, -- Chemin dans SeaweedFS
-    titre VARCHAR(255),
+    nom_original VARCHAR(255) NOT NULL, --diff ?
+    cle_s3 VARCHAR(255) NOT NULL, 
+    titre VARCHAR(255), --diff ?
     date_upload TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Table Galerie (Héritage Single Table)
+-- 2. Table Galerie (Avec date_publication)
 CREATE TABLE galerie (
-    id UUID PRIMARY KEY,
-    photographe_id UUID NOT NULL, -- ID venant du service Identity
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    photographe_id UUID NOT NULL, 
     type_galerie VARCHAR(20) NOT NULL, -- 'PUBLIQUE' ou 'PRIVEE'
     titre VARCHAR(255) NOT NULL,
     description TEXT,
     date_creation TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    date_publication TIMESTAMP,        -- Reste NULL tant que ce n'est pas publié
     est_publiee BOOLEAN DEFAULT FALSE,
     mode_mise_en_page VARCHAR(100),
-    -- Champs spécifiques GaleriePrivee
-    emails_client JSON, -- Liste des invités
+
+    -- Pour les galeries privés
     code_acces VARCHAR(100),
-    url_acces_direct VARCHAR(255)
+    url_acces VARCHAR(255)
 );
 
--- Table de jointure (Relation Photo-Galerie)
+-- 3. Table de jointure (Relation Photo-Galerie avec ordre)
 CREATE TABLE galerie_photo (
     galerie_id UUID REFERENCES galerie(id) ON DELETE CASCADE,
     photo_id UUID REFERENCES photo(id) ON DELETE CASCADE,
     PRIMARY KEY (galerie_id, photo_id)
 );
 
--- Table Commentaire
+-- 4. Table Invitation (Version épurée)
+CREATE TABLE invitation (
+    id INT PRIMARY KEY,
+    galerie_id UUID NOT NULL REFERENCES galerie(id) ON DELETE CASCADE,
+    email VARCHAR(255) NOT NULL,
+    UNIQUE(galerie_id, email)
+);
+
+-- 5. Table Commentaire
 CREATE TABLE commentaire (
-    id SERIAL PRIMARY KEY,
-    galerie_id UUID REFERENCES galerie(id) ON DELETE CASCADE,
-    photo_id UUID REFERENCES photo(id) ON DELETE CASCADE,
-    pseudo VARCHAR(100),
+    id INT PRIMARY KEY,
+    galerie_id UUID NOT NULL REFERENCES galerie(id) ON DELETE CASCADE,
+    photo_id UUID NOT NULL REFERENCES photo(id) ON DELETE CASCADE,
+    pseudo VARCHAR(100) NOT NULL,
     contenu TEXT NOT NULL,
     date_post TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
