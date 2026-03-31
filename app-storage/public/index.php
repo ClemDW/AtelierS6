@@ -1,10 +1,36 @@
 <?php
 declare(strict_types=1);
 
-require_once __DIR__ . '/../vendor/autoload.php';
+use storage\api\actions\PhotoUploadAction;
+use storage\core\StorageService;
+use DI\ContainerBuilder;
+use Slim\Factory\AppFactory;
 
-/* application boostrap */
-$appli = require_once __DIR__ . '/../src/config/bootstrap.php';
+require __DIR__ . '/../vendor/autoload.php';
+
+$dotenv = Dotenv\Dotenv::createImmutable(__DIR__ . '/../config');
+$dotenv->load();
+$builder = new ContainerBuilder();
+$builder->addDefinitions(__DIR__ . '/../config/container.php' );
+$container = $builder->build();
+
+// ── Application Slim ──────────────────────────────────────────────────────────
+AppFactory::setContainer($container);
+$app = AppFactory::create();
+$app->addBodyParsingMiddleware();
+$app->addRoutingMiddleware();
+$app->addErrorMiddleware(true, false, false)
+    ->getDefaultErrorHandler()
+    ->forceContentType('application/json');
 
 
-$appli->run();
+
+$app->post('/users/{id}/photos', \storage\api\actions\UploadAction::class);
+$app->get('/', function ($request, $response, $args) {
+    $response->getBody()->write('Hello World!');
+    return $response;
+});
+
+
+$app->run();
+
