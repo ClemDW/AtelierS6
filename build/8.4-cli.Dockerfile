@@ -19,4 +19,8 @@ RUN install-php-extensions  pgsql mysqli
 RUN install-php-extensions  pdo_mysql pdo_pgsql
 RUN install-php-extensions  xdebug
 RUN install-php-extensions @composer
+
+COPY entrypoint.sh /usr/local/bin/entrypoint.sh
+RUN chmod +x /usr/local/bin/entrypoint.sh
+
 EXPOSE 80

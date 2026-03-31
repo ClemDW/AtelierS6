@@ -1,5 +1,5 @@
 {
-  "name": "toubilib/app-mail",
+  "name": "photopro/app-mail",
   "description": "Service de consommation des messages RabbitMQ et envoi d'emails",
   "type": "project",
   "require": {
