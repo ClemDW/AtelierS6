@@ -23,7 +23,22 @@ class GalerieRepository implements GalerieRepositoryInterface
         $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
         $galeries = [];
         foreach ($rows as $row) {
+            $emails_clients_stmt = $this->pdo->prepare('SELECT email FROM invitation WHERE galerie_id = :galerie_id');
+            $emails_clients_stmt->execute(['galerie_id' => $row['id']]);
+            $emails_clients = $emails_clients_stmt->fetchAll(PDO::FETCH_COLUMN);
+            $photosId_stmt = $this->pdo->prepare('SELECT * FROM galerie_photo WHERE galerie_id = :galerie_id');
+            $photosId_stmt->execute(['galerie_id' => $row['id']]);
+            $photosId = $photosId_stmt->fetchAll(PDO::FETCH_ASSOC);
             $photos = [];
+            foreach ($photosId as $photoId) {
+                $stmtPhoto = $this->pdo->prepare('SELECT * FROM photo WHERE id = :id');
+                $stmtPhoto->execute(['id' => $photoId['photo_id']]);
+                $photo = $stmtPhoto->fetch(PDO::FETCH_ASSOC);
+                if ($photo) {
+                    $photos[] = $photo;
+                }
+            }
+
             $galeries[] = new Galerie(
                 $row['id'],
                 $row['photographe_id'],
@@ -33,7 +48,7 @@ class GalerieRepository implements GalerieRepositoryInterface
                 $row['date_creation'], 
                 $row['est_publiee'], 
                 $row['mode_mise_en_page'], 
-                $row['email_clients'],
+                $emails_clients,
                 $row['code_acces'],
                 $row['url_acces_direct'],
                 $photos
@@ -48,6 +63,11 @@ class GalerieRepository implements GalerieRepositoryInterface
         $stmt->execute(['id' => $id]);
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
         if ($row) {
+            
+            $emails_clients_stmt = $this->pdo->prepare('SELECT email FROM invitation WHERE galerie_id = :galerie_id');
+            $emails_clients_stmt->execute(['galerie_id' => $row['id']]);
+            $emails_clients = $emails_clients_stmt->fetchAll(PDO::FETCH_COLUMN);
+
             $stmtIdPhotos = $this->pdo->prepare('SELECT * FROM galerie_photo WHERE galerie_id = :galerie_id');
             $stmtIdPhotos->execute(['galerie_id' => $row['id']]);
             $photosId = $stmtIdPhotos->fetchAll(PDO::FETCH_ASSOC);
@@ -71,7 +91,7 @@ class GalerieRepository implements GalerieRepositoryInterface
                 $row['date_creation'],
                 $row['est_publiee'],
                 $row['mode_mise_en_page'],
-                $row['email_clients'],
+                $emails_clients,
                 $row['code_acces'],
                 $row['url_acces_direct'],
                 $photos

@@ -7,6 +7,8 @@ use photopro\api\actions\GalerieRepository;
 use photopro\api\domain\entities\Galerie;
 use photopro\core\application\ports\api\dtos\GaleriesListeDTO;
 use photopro\core\application\ports\api\ServiceGalerieInterface;
+use photopro\core\application\ports\spi\GalerieRepositoryInterface;
+use photopro\core\application\ports\api\dtos\GalerieAfficheDTO;
 
 class ServiceGalerie implements ServiceGalerieInterface
 {
@@ -31,5 +33,20 @@ class ServiceGalerie implements ServiceGalerieInterface
             );
         }
         return $galeries;
+    }
+
+    public function getGalerieAffiche(string $id): ?GalerieAfficheDTO
+    {
+        $galerie = $this->galerieRepository->getGalerieById($id);
+        if ($galerie === null) {
+            return null;
+        }
+        return new GalerieAfficheDTO(
+            $galerie->getId(),
+            $galerie->getTitre(),
+            $galerie->getDescription(),
+            $galerie->getDateCreation(),
+            $galerie->getUrl()
+        );
     }
 }
