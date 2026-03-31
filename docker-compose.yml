@@ -3,7 +3,6 @@ networks:
     driver: bridge
 
 services:
-
   gatewayfront.photopro:
     build:
       context: build
@@ -71,6 +70,8 @@ services:
     working_dir: /var/php
     networks:
       - photopro.net
+    env_file:
+      - storage.env
     depends_on:
       - S3
       - galerie.db
