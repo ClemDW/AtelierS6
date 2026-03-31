@@ -1,3 +1,4 @@
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 -- 1. Table Photo (Stockage brut)
 CREATE TABLE photo (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
