@@ -152,7 +152,7 @@ services:
     networks:
       - photopro.net
     volumes:
-      - ./sql/db_galerie.schema.sql:/var/lib/postgresql/data/01-db_galerie.schema.sql
+      - ./sql/db_galery.schema.sql:/docker-entrypoint-initdb.d/01-db_galerie.schema.sql
 
   user.db:
     image: "postgres:latest"
@@ -162,7 +162,7 @@ services:
     networks:
       - photopro.net
     volumes:
-      - ./sql/db_user.schema.sql:/var/lib/postgresql/data/01-db_user.schema.sql
+      - ./sql/db_user.schema.sql:/docker-entrypoint-initdb.d/01-db_user.schema.sql
 
   adminer:
     image: adminer
