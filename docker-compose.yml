@@ -1,0 +1,172 @@
+networks:
+  photopro.net:
+    driver: bridge
+
+services:
+
+  gatewayfront.photopro:
+    build:
+      context: build
+      dockerfile: 8.4-cli.Dockerfile
+    ports:
+      - "6080:80"
+    volumes:
+      - ./gateway-front:/var/php
+    working_dir: /var/php
+    networks:
+      - photopro.net
+    command: "php -S 0.0.0.0:80 -t /var/php/public"
+
+  gatewayback.photopro:
+    build:
+      context: build
+      dockerfile: 8.4-cli.Dockerfile
+    ports:
+      - "6081:80"
+    volumes:
+      - ./gateway-back:/var/php
+    working_dir: /var/php
+    networks:
+      - photopro.net
+    command: "php -S 0.0.0.0:80 -t /var/php/public"
+
+  service-auth.photopro:
+    build:
+      context: build
+      dockerfile: 8.4-cli.Dockerfile
+    ports:
+      - "6084:80"
+    volumes:
+      - ./app-auth:/var/php
+    working_dir: /var/php
+    networks:
+      - photopro.net
+    depends_on:
+      - user.db
+    command: "php -S 0.0.0.0:80 -t /var/php/public"
+
+  service-galerie.photopro:
+    build:
+      context: build
+      dockerfile: 8.4-cli.Dockerfile
+    ports:
+      - "6082:80"
+    volumes:
+      - ./app-galerie:/var/php
+    working_dir: /var/php
+    networks:
+      - photopro.net
+    depends_on:
+      - galerie.db
+    command: "php -S 0.0.0.0:80 -t /var/php/public"
+
+  service-storage.photopro:
+    build:
+      context: build
+      dockerfile: 8.4-cli.Dockerfile
+    ports:
+      - "6083:80"
+    volumes:
+      - ./app-storage:/var/php
+    working_dir: /var/php
+    networks:
+      - photopro.net
+    depends_on:
+      - S3
+      - galerie.db
+    command: "php -S 0.0.0.0:80 -t /var/php/public"
+
+  S3:
+    image: chrislusf/seaweedfs:latest
+    ports:
+      - "8333:8333"
+      - "9333:9333"
+      - "23646:23646"
+    command: "server -dir=/data -s3 -s3.port=8333 -s3.config=/etc/seaweedfs/s3.json"
+    networks:
+      - photopro.net
+    volumes:
+      - ./S3/data:/data
+      - ./S3/s3.json:/etc/seaweedfs/s3.json
+
+  #######################################
+  ### RabbitMQ Service
+  #######################################
+  rabbitmq:
+    image: rabbitmq:4-management
+    ports:
+      - "15672:15672"
+      - "5672:5672"
+    healthcheck:
+      test: rabbitmq-diagnostics -q ping
+      interval: 8s
+      timeout: 30s
+      retries: 3
+    networks:
+      - photopro.net
+    volumes:
+      - ./rabbitmq.photopro:/var/lib/rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: photopro
+      RABBITMQ_DEFAULT_PASS: photopro
+
+  ##############################################
+  ### MailCatcher
+  ##############################################
+  mail.photopro:
+    build:
+      context: build
+      dockerfile: mailcatcher.Dockerfile
+    networks:
+      - photopro.net
+    ports:
+      - "1080:1080"
+
+  ##############################################
+  ### Service Mail (consommateur RabbitMQ)
+  ##############################################
+  service-mail.photopro:
+    build:
+      context: build
+      dockerfile: 8.4-cli.Dockerfile
+    volumes:
+      - ./app-mail:/var/www
+    working_dir: /var/www
+    networks:
+      - photopro.net
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      mail.photopro:
+        condition: service_started
+    env_file: ./app-mail/.env
+    command: "php /var/www/bin/consumer.php"
+
+  # service photoproprat.db : base de données postgresql pour les praticiens
+
+  galerie.db:
+    image: "postgres:latest"
+    env_file: ./galeriedb.env
+    ports:
+      - "5432:5432"
+    networks:
+      - photopro.net
+    volumes:
+      - ./sql/db_galerie.schema.sql:/var/lib/postgresql/data/01-db_galerie.schema.sql
+
+  user.db:
+    image: "postgres:latest"
+    env_file: ./userdb.env
+    ports:
+      - "5433:5432"
+    networks:
+      - photopro.net
+    volumes:
+      - ./sql/db_user.schema.sql:/var/lib/postgresql/data/01-db_user.schema.sql
+
+  adminer:
+    image: adminer
+    ports:
+      - "8080:8080"
+    networks:
+      - photopro.net
