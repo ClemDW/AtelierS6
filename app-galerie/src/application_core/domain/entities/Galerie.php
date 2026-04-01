@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace photopro\api\domain\entities;
+namespace photopro\core\domain\entities;
 
 use Respect\Validation\Rules\Date;
 
@@ -96,7 +96,7 @@ class Galerie
         return $this->mise_en_page;
     }
 
-    public function getEmailClients(): array
+    public function getEmailsClients(): array
     {
         return $this->email_clients;
     }
@@ -109,6 +109,11 @@ class Galerie
     public function getUrl(): string
     {
         return $this->url;
+    }
+
+    public function getPhotos(): array
+    {
+        return $this->photos;
     }
 
 }
