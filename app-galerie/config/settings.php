@@ -28,7 +28,7 @@ use photopro\api\actions\CreerRdvAction;
 use photopro\api\actions\CreerPatientAction;
 use photopro\api\actions\CreerIndisponibiliteAction;
 
-$dotenv = Dotenv::createImmutable(__DIR__);
+$dotenv = Dotenv::createImmutable(__DIR__ . '/../../env', 'galeriedb.env');
 $dotenv->load();
 
 return [

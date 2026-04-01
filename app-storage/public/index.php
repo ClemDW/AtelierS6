@@ -8,8 +8,10 @@ use Slim\Factory\AppFactory;
 
 require __DIR__ . '/../vendor/autoload.php';
 
-$dotenv = Dotenv\Dotenv::createImmutable(__DIR__ . '/../config');
-$dotenv->load();
+if (file_exists(__DIR__ . '/../../env/storage.env')) {
+    $dotenv = Dotenv\Dotenv::createImmutable(__DIR__ . '/../../env', 'storage.env');
+    $dotenv->load();
+}
 $builder = new ContainerBuilder();
 $builder->addDefinitions(__DIR__ . '/../config/container.php' );
 $container = $builder->build();

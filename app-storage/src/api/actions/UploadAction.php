@@ -4,8 +4,10 @@ namespace storage\api\actions;
 
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
+use Psr\Http\Message\UploadedFileInterface;
 use Slim\Exception\HttpBadRequestException;
 use Slim\Exception\HttpInternalServerErrorException;
+use storage\core\dto\InputPhotoDTO;
 use storage\core\usecases\StorageService;
 use storage\core\usecases\StorageServiceException;
 
@@ -60,9 +62,14 @@ class UploadAction
         }
 
         try {
-            // stockage dans le storage service et calcul de l'url présignée
-            $key = $this->storageService->store($photograph_id, $upload->getStream(), $mimeType);
-            $url = $this->storageService->getPresignedUrl($key);
+            // Création du DTO d'entrée
+            $inputDTO = new InputPhotoDTO((string)$photograph_id, $upload->getStream(), $mimeType);
+            
+            // stockage dans le storage service via le DTO
+            $outputDTO = $this->storageService->store($inputDTO);
+            
+            $key = $outputDTO->key;
+            $url = $outputDTO->url;
         } catch (StorageServiceException $e) {
             throw new HttpInternalServerErrorException($request, 'erreur stockage : '. $e->getMessage());
         }

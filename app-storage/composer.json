@@ -21,9 +21,9 @@
   },
   "autoload": {
     "psr-4": {
-      "photopro\\api\\": "./src/api",
-      "photopro\\core\\": "./src/application_core",
-      "photopro\\infra\\": "./src/infrastructure"
+      "storage\\api\\": "./src/api",
+      "storage\\core\\": "./src/core",
+      "storage\\infra\\": "./src/infrastructure"
     }
   },
   "config": {
