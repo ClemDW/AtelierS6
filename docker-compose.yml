@@ -71,7 +71,7 @@ services:
     networks:
       - photopro.net
     env_file:
-      - storage.env
+      - ./env/storage.env
     depends_on:
       - S3
       - galerie.db
@@ -140,14 +140,14 @@ services:
         condition: service_healthy
       mail.photopro:
         condition: service_started
-    env_file: ./app-mail/.env
+    env_file: ./env/mail.env
     command: "php /var/www/bin/consumer.php"
 
   # service photoproprat.db : base de données postgresql pour les praticiens
 
   galerie.db:
     image: "postgres:latest"
-    env_file: ./galeriedb.env
+    env_file: ./env/galeriedb.env
     ports:
       - "5432:5432"
     networks:
@@ -157,7 +157,7 @@ services:
 
   user.db:
     image: "postgres:latest"
-    env_file: ./userdb.env
+    env_file: ./env/userdb.env
     ports:
       - "5433:5432"
     networks:
