@@ -9,8 +9,8 @@ require_once __DIR__ . '/../vendor/autoload.php';
 
 use PhpAmqpLib\Connection\AMQPStreamConnection;
 use PhpAmqpLib\Message\AMQPMessage;
-use toubilib\mail\infrastructure\SymfonyMailerAdapter;
-use toubilib\mail\application\NotificationService;
+use photopro\mail\infrastructure\SymfonyMailerAdapter;
+use photopro\mail\application\NotificationService;
 
 // Configuration RabbitMQ 
 $rabbitHost = getenv('RABBITMQ_HOST');
@@ -76,45 +76,14 @@ try {
         // Afficher le contenu du message
         echo "Type d'événement: " . ($data['event_type'] ?? 'N/A') . "\n";
         echo "Timestamp: " . ($data['timestamp'] ?? 'N/A') . "\n";
-
-        if (isset($data['destinataires']) && is_array($data['destinataires'])) {
-            echo "Destinataires:\n";
-            foreach ($data['destinataires'] as $destinataire) {
-                echo "  - Type: " . ($destinataire['type'] ?? 'N/A') . "\n";
-                echo "    Email: " . ($destinataire['email'] ?? 'N/A') . "\n";
-                echo "    Nom: " . ($destinataire['prenom'] ?? '') . " " . ($destinataire['nom'] ?? '') . "\n";
-            }
-        }
-
-        if (isset($data['rdv'])) {
-            echo "Rendez-vous:\n";
-            echo "  - ID: " . ($data['rdv']['id'] ?? 'N/A') . "\n";
-            echo "  - Début: " . ($data['rdv']['date_heure_debut'] ?? 'N/A') . "\n";
-            echo "  - Fin: " . ($data['rdv']['date_heure_fin'] ?? 'N/A') . "\n";
-            echo "  - Durée: " . ($data['rdv']['duree'] ?? 'N/A') . " min\n";
-            echo "  - Motif: " . ($data['rdv']['motif'] ?? 'N/A') . "\n";
-            echo "  - Statut: " . ($data['rdv']['statut'] ?? 'N/A') . "\n";
-        }
-
-        if (isset($data['praticien'])) {
-            echo "Praticien:\n";
-            echo "  - ID: " . ($data['praticien']['id'] ?? 'N/A') . "\n";
-            echo "  - Nom: " . ($data['praticien']['prenom'] ?? '') . " " . ($data['praticien']['nom'] ?? '') . "\n";
-            echo "  - Spécialité: " . ($data['praticien']['specialite'] ?? 'N/A') . "\n";
-        }
-
-        if (isset($data['patient'])) {
-            echo "Patient:\n";
-            echo "  - ID: " . ($data['patient']['id'] ?? 'N/A') . "\n";
-            echo "  - Nom: " . ($data['patient']['prenom'] ?? '') . " " . ($data['patient']['nom'] ?? '') . "\n";
-            echo "  - Email: " . ($data['patient']['email'] ?? 'N/A') . "\n";
-        }
-
+        echo "    Type: " . ($data['event_type'] ?? 'N/A') . "\n";
+        echo "    Email: " . ($data['destinataire']['email'] ?? 'N/A') . "\n";
+        echo "    Nom: " . ($data['destinataire']['prenom'] ?? '') . " " . ($data['destinataire']['nom'] ?? '') . "\n";
         echo "-------------------------------------\n";
         echo "[ENVOI DES EMAILS]\n";
 
         // Envoyer les notifications par email
-        $notificationService->handleRdvEvent($data);
+        $notificationService->handleGaleryEvent($data);
 
         echo "=====================================\n";
 
