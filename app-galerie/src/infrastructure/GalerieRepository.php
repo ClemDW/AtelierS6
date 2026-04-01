@@ -102,4 +102,28 @@ class GalerieRepository implements GalerieRepositoryInterface
             return null;
         }
     }
+
+    public function ajouterPhotoGalerie(string $galerieId, string $photoId): void
+    {
+        $stmt = $this->pdo->prepare('INSERT INTO galerie_photo (galerie_id, photo_id) VALUES (:galerie_id, :photo_id)');
+        $stmt->execute(['galerie_id' => $galerieId, 'photo_id' => $photoId]);
+    }
+
+    public function supprimerPhotoGalerie(string $galerieId, string $photoId): void
+    {
+        $stmt = $this->pdo->prepare('DELETE FROM galerie_photo WHERE galerie_id = :galerie_id AND photo_id = :photo_id');
+        $stmt->execute(['galerie_id' => $galerieId, 'photo_id' => $photoId]);
+    }
+
+    public function publierGalerie(string $galerieId): void
+    {
+        $stmt = $this->pdo->prepare('UPDATE galerie SET est_publiee = TRUE, date_publication = CURRENT_TIMESTAMP WHERE id = :id');
+        $stmt->execute(['id' => $galerieId]);
+    }
+
+    public function depublierGalerie(string $galerieId): void
+    {
+        $stmt = $this->pdo->prepare('UPDATE galerie SET est_publiee = FALSE, date_publication = NULL WHERE id = :id');
+        $stmt->execute(['id' => $galerieId]);
+    }
 }

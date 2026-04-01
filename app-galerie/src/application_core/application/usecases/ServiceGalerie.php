@@ -49,4 +49,24 @@ class ServiceGalerie implements ServiceGalerieInterface
             $galerie->getUrl()
         );
     }
+
+    public function ajouterPhoto(string $galerieId, string $photoId): void
+    {
+        $this->galerieRepository->ajouterPhotoGalerie($galerieId, $photoId);
+    }
+
+    public function supprimerPhoto(string $galerieId, string $photoId): void
+    {
+        $this->galerieRepository->supprimerPhotoGalerie($galerieId, $photoId);
+    }
+
+    public function publierGalerie(string $galerieId): void
+    {
+        $this->galerieRepository->publierGalerie($galerieId);
+    }
+
+    public function depublierGalerie(string $galerieId): void
+    {
+        $this->galerieRepository->depublierGalerie($galerieId);
+    }
 }

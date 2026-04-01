@@ -8,4 +8,8 @@ interface ServiceGalerieInterface
 {
     public function getGaleriesPublic(): array;
     public function getGalerieAffiche(string $id): ?GalerieAfficheDTO;
+    public function ajouterPhoto(string $galerieId, string $photoId): void;
+    public function supprimerPhoto(string $galerieId, string $photoId): void;
+    public function publierGalerie(string $galerieId): void;
+    public function depublierGalerie(string $galerieId): void;
 }
