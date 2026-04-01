@@ -45,8 +45,12 @@ return [
     },
 
     JwtManagerInterface::class => function (ContainerInterface $c) {
-        $config = parse_ini_file($c->get("env.config"));
-        $secret = $config["auth.jwt.key"] ?? getenv("AUTH_JWT_KEY") ?? 'your_secret_key';
+        $secret = $_ENV['AUTH_JWT_KEY'] ?? getenv("AUTH_JWT_KEY");
+        
+        if (empty($secret)) {
+            throw new \RuntimeException("La clé secrète JWT (AUTH_JWT_KEY) n'est pas définie dans le fichier .env !");
+        }
+        
         return new JwtManager($secret);
     },
 

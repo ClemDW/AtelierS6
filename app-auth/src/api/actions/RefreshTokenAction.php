@@ -58,8 +58,12 @@ class RefreshTokenAction extends AbstractAction
                 ->withStatus(200);
 
         } catch (AuthProviderExpiredAccessTokenException|AuthProviderInvalidAccessTokenException $e) {
+            
+            // On récupère la VRAIE raison de l'erreur JWT (Signature, Time, etc.)
+            $realError = $e->getPrevious() ? $e->getPrevious()->getMessage() : $e->getMessage();
+            
             $payload = json_encode([
-                'error' => $e->getMessage(),
+                'error' => $realError,
                 'code' => 'TOKEN_REFRESH_FAILED'
             ]);
             $response->getBody()->write($payload);
