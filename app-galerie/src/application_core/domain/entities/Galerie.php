@@ -13,6 +13,7 @@ class Galerie
     private string $titre;
     private string $description;
     private string $dateCreation;
+    private string $datePublication;
     private bool $isPublic;
     private string $mise_en_page;
     private array $email_clients;
@@ -27,6 +28,7 @@ class Galerie
         string $titre,
         string $description,
         string $dateCreation,
+        string $datePublication,
         bool $isPublic,
         string $mise_en_page,
         array $email_clients,
@@ -40,6 +42,7 @@ class Galerie
         $this->titre = $titre;
         $this->description = $description;
         $this->dateCreation = $dateCreation;
+        $this->datePublication = $datePublication;
         $this->isPublic = $isPublic;
         $this->mise_en_page = $mise_en_page;
         $this->email_clients = $email_clients;
@@ -76,6 +79,11 @@ class Galerie
     public function getDateCreation(): string
     {
         return $this->dateCreation;
+    }
+
+    public function getDatePublication(): string
+    {
+        return $this->datePublication;
     }
 
     public function isPublic(): bool

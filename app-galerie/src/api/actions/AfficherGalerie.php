@@ -18,6 +18,12 @@ class AfficherGalerie
     public function __invoke(Request $request, Response $response, array $args): Response
     {
         $id = $args['id'];
+        if (empty($id)) {
+            $response->getBody()->write(json_encode(['error' => 'ID de galerie manquant']));
+            return $response
+                ->withHeader('Content-Type', 'application/json')
+                ->withStatus(400);
+        }
         $galerie = $this->serviceGalerie->getGalerieAffiche($id);
         if ($galerie === null) {
             $response->getBody()->write(json_encode(['error' => 'Galerie not found']));
