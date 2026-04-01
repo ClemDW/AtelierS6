@@ -5,10 +5,12 @@ namespace photopro\api\actions;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use photopro\api\provider\AuthProviderInterface;
+use photopro\api\provider\exceptions\AuthProviderExpiredAccessTokenException;
+use photopro\api\provider\exceptions\AuthProviderInvalidAccessTokenException;
 use photopro\core\domain\exceptions\AuthenticationException;
 
 
-class RefreshTokenAction
+class RefreshTokenAction extends AbstractAction
 {
     private AuthProviderInterface $authProvider;
 
@@ -17,7 +19,7 @@ class RefreshTokenAction
         $this->authProvider = $authProvider;
     }
 
-    public function __invoke(ServerRequestInterface $request, ResponseInterface $response): ResponseInterface
+    public function __invoke(ServerRequestInterface $request, ResponseInterface $response, array $args): ResponseInterface
     {
         try {
             $data = $request->getParsedBody();
@@ -55,7 +57,7 @@ class RefreshTokenAction
                 ->withHeader('Content-Type', 'application/json')
                 ->withStatus(200);
 
-        } catch (AuthenticationException $e) {
+        } catch (AuthProviderExpiredAccessTokenException|AuthProviderInvalidAccessTokenException $e) {
             $payload = json_encode([
                 'error' => $e->getMessage(),
                 'code' => 'TOKEN_REFRESH_FAILED'

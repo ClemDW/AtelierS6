@@ -2,7 +2,6 @@
 
 use DI\ContainerBuilder;
 use Slim\Factory\AppFactory;
-use photopro\api\middlewares\Cors;
 
 
 
@@ -15,7 +14,6 @@ $app = AppFactory::createFromContainer($c);
 
  
 $app->addBodyParsingMiddleware();
-$app->add(Cors::class);
 $app->addRoutingMiddleware();
 $app->addErrorMiddleware($c->get('displayErrorDetails'), false, false)
     ->getDefaultErrorHandler()

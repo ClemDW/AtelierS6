@@ -1,12 +1,24 @@
+-- 0. Table Photographe
+CREATE TABLE photographe (
+    id UUID PRIMARY KEY, -- Même ID que l'utilisateur dans app-auth
+    nom VARCHAR(255) NOT NULL,
+    pseudo VARCHAR(255) UNIQUE NOT NULL,
+    description TEXT,
+    email_contact VARCHAR(255),
+    tel_contact VARCHAR(50),
+    image_profil VARCHAR(255),
+    date_creation TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
 -- 1. Table Photo (Stockage brut)
 CREATE TABLE photo (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     owner_id UUID NOT NULL, 
     mime_type VARCHAR(50) NOT NULL, -- Type de média (JPG, PNG)
     taille_mo DECIMAL(10, 2) NOT NULL,
-    nom_original VARCHAR(255) NOT NULL, --diff ?
+    nom_original VARCHAR(255) NOT NULL, 
     cle_s3 VARCHAR(255) NOT NULL, 
-    titre VARCHAR(255), --diff ?
+    titre VARCHAR(255), 
     date_upload TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
