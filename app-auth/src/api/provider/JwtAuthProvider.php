@@ -1,158 +1,98 @@
 <?php
+declare(strict_types=1);
 
 namespace photopro\api\provider;
 
-use Firebase\JWT\JWT;
-use Firebase\JWT\Key;
+use photopro\core\application\ports\api\dto\CredentialsDTO;
+use photopro\core\application\ports\api\dto\SignupDTO;
+use photopro\core\application\ports\api\dto\AuthDTO;
+use photopro\core\application\ports\api\dto\UserDTO;
 use photopro\api\provider\AuthProviderInterface;
-use photopro\core\domain\entities\auth\AuthServiceInterface;
-use photopro\core\domain\entities\auth\AuthTokenDTO;
-use photopro\core\domain\entities\auth\UserProfile;
-use photopro\core\domain\exceptions\AuthenticationException;
-
+use photopro\api\provider\exceptions\AuthProviderInvalidCredentialsException;
+use photopro\api\provider\exceptions\AuthProviderExpiredAccessTokenException;
+use photopro\api\provider\exceptions\AuthProviderInvalidAccessTokenException;
+use photopro\core\application\ports\api\jwt\JwtManagerInterface;
+use photopro\core\application\ports\api\jwt\JwtManagerExpiredTokenException;
+use photopro\core\application\ports\api\jwt\JwtManagerInvalidTokenException;
+use photopro\core\application\ports\spi\repositoryInterfaces\AuthRepositoryInterface;
+use photopro\core\application\ports\api\service\AuthnServiceInterface;
+use photopro\core\application\ports\api\service\AuthenticationFailedException;
 
 class JwtAuthProvider implements AuthProviderInterface
 {
-    private AuthServiceInterface $authService;
-    private string $jwtSecret;
-    private string $jwtAlgorithm;
-    private int $accessTokenExpiry;
-    private int $refreshTokenExpiry;
+    private AuthnServiceInterface $authnService;
+    private JwtManagerInterface $jwtManager;
+    private AuthRepositoryInterface $authRepository;
 
     public function __construct(
-        AuthServiceInterface $authService,
-        string $jwtSecret = 'your-secret-key',
-        string $jwtAlgorithm = 'HS256',
-        int $accessTokenExpiry = 3600,  
-        int $refreshTokenExpiry = 86400
+        AuthnServiceInterface $authnService,
+        JwtManagerInterface $jwtManager,
+        AuthRepositoryInterface $authRepository
     ) {
-        $this->authService = $authService;
-        $this->jwtSecret = $jwtSecret;
-        $this->jwtAlgorithm = $jwtAlgorithm;
-        $this->accessTokenExpiry = $accessTokenExpiry;
-        $this->refreshTokenExpiry = $refreshTokenExpiry;
+        $this->authnService = $authnService;
+        $this->jwtManager = $jwtManager;
+        $this->authRepository = $authRepository;
     }
 
-   
-    public function signin(string $email, string $password): AuthTokenDTO
+    public function signup(SignupDTO $credentials): UserDTO
     {
-        $userProfile = $this->authService->authenticate($email, $password);
-
-        $accessToken = $this->generateAccessToken($userProfile);
-        $refreshToken = $this->generateRefreshToken($userProfile);
-
-        return new AuthTokenDTO(
-            $userProfile,
-            $accessToken,
-            $refreshToken,
-            $this->accessTokenExpiry
-        );
+        return $this->authnService->signup($credentials);
     }
 
-   
-    public function refresh(string $refreshToken): AuthTokenDTO
+    public function signin(CredentialsDTO $credentials): AuthDTO
     {
         try {
-            $decoded = JWT::decode($refreshToken, new Key($this->jwtSecret, $this->jwtAlgorithm));
+            $profile = $this->authnService->byCredentials($credentials);
+
+            $accessToken = $this->jwtManager->create($profile, JwtManagerInterface::ACCESS_TOKEN);
+            $refreshToken = $this->jwtManager->create($profile, JwtManagerInterface::REFRESH_TOKEN);
+
+            // 30 jours
+            $expiresAt = new \DateTime('+30 days');
             
-            if ($decoded->type !== 'refresh') {
-                throw new AuthenticationException('Token de rafraîchissement invalide');
-            }
+            // On sauvegarde le refresh token généré dans la base
+            $this->authRepository->saveRefreshToken($profile->id, $refreshToken, $expiresAt);
 
-            $userProfile = new UserProfile(
-                $decoded->sub,
-                $decoded->email,
-                $decoded->role
-            );
-
-            $newAccessToken = $this->generateAccessToken($userProfile);
-            $newRefreshToken = $this->generateRefreshToken($userProfile);
-
-            return new AuthTokenDTO(
-                $userProfile,
-                $newAccessToken,
-                $newRefreshToken,
-                $this->accessTokenExpiry
-            );
-
-        } catch (\Exception $e) {
-            throw new AuthenticationException('Token de rafraîchissement invalide ou expiré');
+            return new AuthDTO($profile, $accessToken, $refreshToken);
+        } catch (AuthenticationFailedException $e) {
+            throw new AuthProviderInvalidCredentialsException('Invalid credentials', 0, $e);
         }
     }
 
-    
-    public function validateToken(string $accessToken): AuthTokenDTO
+    public function getSignedInUser(string $accessToken): UserDTO
     {
         try {
-            $decoded = JWT::decode($accessToken, new Key($this->jwtSecret, $this->jwtAlgorithm));
-            
-            if ($decoded->type !== 'access') {
-                throw new AuthenticationException('Token d\'accès invalide');
-            }
-
-            $userProfile = new UserProfile(
-                $decoded->sub,
-                $decoded->email,
-                $decoded->role
-            );
-
-            return new AuthTokenDTO(
-                $userProfile,
-                $accessToken,
-                '',
-                $this->accessTokenExpiry
-            );
-
-        } catch (\Exception $e) {
-            throw new AuthenticationException('Token d\'accès invalide ou expiré');
+            return $this->jwtManager->validate($accessToken);
+        } catch (JwtManagerExpiredTokenException $e) {
+            throw new AuthProviderExpiredAccessTokenException('Access token expired', 0, $e);
+        } catch (JwtManagerInvalidTokenException $e) {
+            throw new AuthProviderInvalidAccessTokenException('Invalid access token', 0, $e);
         }
     }
 
-    
-    private function generateAccessToken(UserProfile $userProfile): string
+    public function refresh(string $refreshToken): AuthDTO
     {
-        $now = time();
-        $payload = [
-            'iss' => 'photopro-api',
-            'sub' => $userProfile->getId(),
-            'iat' => $now,
-            'exp' => $now + $this->accessTokenExpiry,
-            'type' => 'access',
-            'email' => $userProfile->getEmail(),
-            'role' => $userProfile->getRole(),
-            'roleName' => $userProfile->getRoleName()
-        ];
+        try {
+            // Valider le refresh token et récupérer le profil
+            $profile = $this->jwtManager->validate($refreshToken);
 
-        return JWT::encode($payload, $this->jwtSecret, $this->jwtAlgorithm);
+            // Vérifier que le refresh token existe dans la BDD et est valide
+            if (!$this->authRepository->isValidRefreshToken($profile->id, $refreshToken)) {
+                throw new AuthProviderInvalidAccessTokenException('Refresh token is invalidated or does not exist.');
+            }
+
+            // Générer de nouveaux tokens
+            $newAccessToken = $this->jwtManager->create($profile, JwtManagerInterface::ACCESS_TOKEN);
+            $newRefreshToken = $this->jwtManager->create($profile, JwtManagerInterface::REFRESH_TOKEN);
+
+            $expiresAt = new \DateTime('+30 days');
+            $this->authRepository->saveRefreshToken($profile->id, $newRefreshToken, $expiresAt);
+
+            return new AuthDTO($profile, $newAccessToken, $newRefreshToken);
+        } catch (JwtManagerExpiredTokenException $e) {
+            throw new AuthProviderExpiredAccessTokenException('Refresh token expired', 0, $e);
+        } catch (JwtManagerInvalidTokenException $e) {
+            throw new AuthProviderInvalidAccessTokenException('Invalid refresh token', 0, $e);
+        }
     }
-
-    private function generateRefreshToken(UserProfile $userProfile): string
-    {
-        $now = time();
-        $payload = [
-            'iss' => 'photopro-api',
-            'sub' => $userProfile->getId(),
-            'iat' => $now,
-            'exp' => $now + $this->refreshTokenExpiry,
-            'type' => 'refresh',
-            'type' => 'refresh',               
-            'email' => $userProfile->getEmail(),
-            'role' => $userProfile->getRole()
-        ];
-
-        return JWT::encode($payload, $this->jwtSecret, $this->jwtAlgorithm);
-    }
-
-    public function getSignedInUser(string $accessToken): \photopro\core\application\ports\api\dtos\ProfileDTO
-    {
-        $tokenData = $this->validateToken($accessToken);
-        $userProfile = $tokenData->getUserProfile();
-        return new \photopro\core\application\ports\api\dtos\ProfileDTO(
-            $userProfile->getId(),
-            $userProfile->getEmail(),
-            $userProfile->getRole()
-        );
-    }
-
-
 }

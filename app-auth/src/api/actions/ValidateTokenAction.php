@@ -5,7 +5,7 @@ use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Http\Message\ResponseInterface as Response;
 use photopro\api\provider\AuthProviderInterface;
 
-class ValidateTokenAction
+class ValidateTokenAction extends AbstractAction
 {
     private AuthProviderInterface $authProvider;
 
@@ -14,7 +14,7 @@ class ValidateTokenAction
         $this->authProvider = $authProvider;
     }
 
-    public function __invoke(Request $request, Response $response, $args)
+    public function __invoke(Request $request, Response $response, array $args): Response
     {
         $authHeader = $request->getHeaderLine('Authorization');
         
@@ -52,10 +52,11 @@ class ValidateTokenAction
         $jwt = $token;
 
         try {
-            $this->authProvider->validateToken($jwt);
+            $userDTO = $this->authProvider->getSignedInUser($jwt);
             
             $response->getBody()->write(json_encode([
-                'message' => 'Token is valid.'
+                'message' => 'Token is valid.',
+                'user' => $userDTO->toArray()
             ]));
             return $response->withStatus(200)->withHeader('Content-Type', 'application/json');
         } catch (\Exception $e) {

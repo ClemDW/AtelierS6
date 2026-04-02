@@ -1,15 +1,23 @@
 <?php
+
 declare(strict_types=1);
 
-use Psr\Http\Message\ServerRequestInterface as Request;
-use Psr\Http\Message\ResponseInterface as Response;
+use Psr\Http\Message\ResponseInterface;
+use Psr\Http\Message\ServerRequestInterface;
+use Slim\App;
+use photopro\api\actions\SignupAction;
+use photopro\api\actions\SigninAction;
+use photopro\api\actions\RefreshTokenAction;
+use photopro\api\actions\ValidateTokenAction;
 
-return function( \Slim\App $app):\Slim\App {
-    $app->get("/", function (Request $request, Response $response) {
-        $response->getBody()->write("Auth Service API");
-        return $response;
-    });
 
+return function (App $app): App {
+
+    $app->post('/signin', SigninAction::class)->setName('auth.signin');
+    $app->post('/signup', SignupAction::class)->setName('auth.signup');
+    $app->post('/refresh', RefreshTokenAction::class)->setName('auth.refresh');
+
+    $app->get('/validate', ValidateTokenAction::class)->setName('tokens.validate');
 
     return $app;
 };
