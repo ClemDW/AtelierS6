@@ -7,6 +7,7 @@ use storage\core\dto\OutputPhotoDTO;
 use AWS\S3\S3Client;
 use AWS\S3\Exception\S3Exception;
 use Psr\Http\Message\StreamInterface;
+use Ramsey\Uuid\Uuid;
 use PDO;
 
 class StorageService
@@ -104,17 +105,24 @@ class StorageService
     }
 
     public function store(InputPhotoDTO $dto): OutputPhotoDTO {
-        $extension = $this->mimeToExtension($dto->mimeType);
-        $key = sprintf('photos/%s.%s', $dto->photoId, $extension);
-        
         try {
+            $uuid = $this->generateUuid();
+            $extension = $this->mimeToExtension($dto->mimeType);
+            $key = sprintf('users/%s/%s.%s', $dto->photoId, $uuid, $extension);
+            
+            // Stockage dans S3 avec métadonnées
             $this->s3_internal_client->putObject([
                 'Bucket' => $this->bucket,
                 'Key' => $key,
                 'Body' => $dto->content,
-                'ContentType' => $dto->mimeType
+                'ContentType' => $dto->mimeType,
+                'Metadata' => [
+                    'date' => date('d/m/Y H:i:s'),
+                    'user_id' => $dto->photoId,
+                ]
             ]);
             
+            // Génération de l'URL pré-signée pour accès direct
             $url = $this->getPresignedUrl($key);
             
             return new OutputPhotoDTO($key, $url);
@@ -148,6 +156,6 @@ class StorageService
     }
 
     private function generateUuid(): string {
-        return bin2hex(random_bytes(16)); // 32 caractères hexadécimaux
+        return Uuid::uuid4()->toString();
     }
 }

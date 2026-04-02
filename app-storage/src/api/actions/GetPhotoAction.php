@@ -33,7 +33,7 @@ class GetPhotoAction
             // Renvoie le flux avec les bons headers
             return $response
                 ->withHeader('Content-Type', $mimeType)
-                ->withBody(new \Slim\Psr7\Stream($stream->detach()));
+                ->withBody($stream);
 
         } catch (\Exception $e) {
             $response->getBody()->write(json_encode([
