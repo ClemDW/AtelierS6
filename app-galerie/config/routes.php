@@ -7,6 +7,10 @@ use Slim\App;
 use photopro\api\actions\CreerGalerieAction;
 use photopro\api\actions\AfficherGalerieAction;
 use photopro\api\actions\ListeGalerieAction;
+use photopro\api\actions\ModifierPublicationGalerieAction;
+use photopro\api\actions\AjouterPhotoAction;
+use photopro\api\actions\RetirerPhotoAction;
+use photopro\api\actions\ListeGalerieParPhotographeAction;
 
 
 return function (App $app): App {
@@ -16,6 +20,7 @@ return function (App $app): App {
     // ==============================
 
     $app->get('/galeries', ListeGalerieAction::class);
+    $app->get('/photographes/{photographeId}/galeries', ListeGalerieParPhotographeAction::class);
     $app->get('/galeries/{id}', AfficherGalerieAction::class);
     $app->options('/galeries', function (Request $request, Response $response) {
         return $response
@@ -25,6 +30,9 @@ return function (App $app): App {
             ->withStatus(204);
     });
     $app->post('/galeries', CreerGalerieAction::class);
+    $app->patch('/galeries/{id}/publication', ModifierPublicationGalerieAction::class);
+    $app->post('/galeries/{id}/photos', AjouterPhotoAction::class);
+    $app->delete('/galeries/{id}/photos/{photoId}', RetirerPhotoAction::class);
 
     return $app;
 };

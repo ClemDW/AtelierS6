@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 
 namespace photopro\api\actions;
 
@@ -7,7 +8,7 @@ use photopro\core\domain\exceptions\GalerieNotFoundException;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 
-class AfficherGalerieAction
+class AjouterPhotoAction
 {
     private ServiceGalerieInterface $serviceGalerie;
 
@@ -18,20 +19,21 @@ class AfficherGalerieAction
 
     public function __invoke(Request $request, Response $response, array $args): Response
     {
-        $id = $args['id'];
-        if (empty($id)) {
-            $response->getBody()->write(json_encode(['error' => 'ID de galerie manquant']));
+        $galerieId = $args['id'];
+        $body = $request->getParsedBody();
+
+        if (empty($body['photoId'])) {
+            $response->getBody()->write(json_encode(['error' => 'Champ manquant : photoId']));
             return $response->withHeader('Content-Type', 'application/json')->withStatus(400);
         }
 
         try {
-            $galerie = $this->serviceGalerie->getGalerieAffiche($id);
+            $this->serviceGalerie->ajouterPhoto($galerieId, $body['photoId']);
         } catch (GalerieNotFoundException $e) {
             $response->getBody()->write(json_encode(['error' => $e->getMessage()]));
             return $response->withHeader('Content-Type', 'application/json')->withStatus(404);
         }
 
-        $response->getBody()->write(json_encode($galerie));
-        return $response->withHeader('Content-Type', 'application/json')->withStatus(200);
+        return $response->withHeader('Content-Type', 'application/json')->withStatus(204);
     }
 }

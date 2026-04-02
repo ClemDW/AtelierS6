@@ -4,6 +4,8 @@ declare(strict_types=1);
 namespace photopro\core\application\usecases;
 
 use photopro\core\domain\entities\Galerie;
+use photopro\core\domain\exceptions\GalerieNotFoundException;
+use photopro\core\domain\exceptions\PhotoNotFoundException;
 use photopro\core\application\ports\api\dtos\GaleriesListeDTO;
 use photopro\core\application\ports\api\ServiceGalerieInterface;
 use photopro\core\application\ports\spi\GalerieRepositoryInterface;
@@ -18,6 +20,15 @@ class ServiceGalerie implements ServiceGalerieInterface
     public function __construct(GalerieRepositoryInterface $galerieRepository)
     {
         $this->galerieRepository = $galerieRepository;
+    }
+
+    private function getGalerieOuException(string $galerieId): Galerie
+    {
+        $galerie = $this->galerieRepository->getGalerieById($galerieId);
+        if ($galerie === null) {
+            throw new GalerieNotFoundException($galerieId);
+        }
+        return $galerie;
     }
 
     public function getGaleriesPublic(): array
@@ -36,12 +47,25 @@ class ServiceGalerie implements ServiceGalerieInterface
         return $galeries;
     }
 
-    public function getGalerieAffiche(string $id): ?GalerieAfficheDTO
+    public function getGaleriesParPhotographe(string $photographeId): array
     {
-        $galerie = $this->galerieRepository->getGalerieById($id);
-        if ($galerie === null) {
-            return null;
+        $liste = $this->galerieRepository->getGaleriesParPhotographe($photographeId);
+        $galeries = [];
+        foreach ($liste as $galerie) {
+            $galeries[] = new GaleriesListeDTO(
+                $galerie->getId(),
+                $galerie->getTitre(),
+                $galerie->getDescription(),
+                $galerie->getDateCreation(),
+                $galerie->getUrl()
+            );
         }
+        return $galeries;
+    }
+
+    public function getGalerieAffiche(string $id): GalerieAfficheDTO
+    {
+        $galerie = $this->getGalerieOuException($id);
         return new GalerieAfficheDTO(
             $galerie->getId(),
             $galerie->getPhotographeId(),
@@ -61,24 +85,31 @@ class ServiceGalerie implements ServiceGalerieInterface
 
     public function ajouterPhoto(string $galerieId, string $photoId): void
     {
+        $this->getGalerieOuException($galerieId);
         $this->galerieRepository->ajouterPhotoGalerie($galerieId, $photoId);
     }
 
     public function supprimerPhoto(string $galerieId, string $photoId): void
     {
-        $this->galerieRepository->supprimerPhotoGalerie($galerieId, $photoId);
+        $this->getGalerieOuException($galerieId);
+        $supprime = $this->galerieRepository->supprimerPhotoGalerie($galerieId, $photoId);
+        if (!$supprime) {
+            throw new PhotoNotFoundException($photoId, $galerieId);
+        }
     }
 
     public function publierGalerie(string $galerieId): void
     {
+        $this->getGalerieOuException($galerieId);
         $this->galerieRepository->publierGalerie($galerieId);
     }
 
     public function depublierGalerie(string $galerieId): void
     {
+        $this->getGalerieOuException($galerieId);
         $this->galerieRepository->depublierGalerie($galerieId);
     }
-    
+
     public function creerGalerie(CreerGalerieDTO $dto): GalerieAfficheDTO
     {
         $id = Uuid::uuid4()->toString();
@@ -120,6 +151,5 @@ class ServiceGalerie implements ServiceGalerieInterface
             $galerieCreee->getPhotos(),
             $galerieCreee->getEmailsClients()
         );
-
     }
 }

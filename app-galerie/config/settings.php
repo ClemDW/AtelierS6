@@ -9,6 +9,10 @@ use photopro\infra\GalerieRepository;
 use photopro\api\actions\ListeGalerieAction;
 use photopro\api\actions\AfficherGalerieAction;
 use photopro\api\actions\CreerGalerieAction;
+use photopro\api\actions\ModifierPublicationGalerieAction;
+use photopro\api\actions\AjouterPhotoAction;
+use photopro\api\actions\RetirerPhotoAction;
+use photopro\api\actions\ListeGalerieParPhotographeAction;
 
 return [
 
@@ -65,5 +69,21 @@ return [
 
     CreerGalerieAction::class => function (ContainerInterface $c): CreerGalerieAction {
         return new CreerGalerieAction($c->get(ServiceGalerieInterface::class));
+    },
+
+    ModifierPublicationGalerieAction::class => function (ContainerInterface $c): ModifierPublicationGalerieAction {
+        return new ModifierPublicationGalerieAction($c->get(ServiceGalerieInterface::class));
+    },
+
+    AjouterPhotoAction::class => function (ContainerInterface $c): AjouterPhotoAction {
+        return new AjouterPhotoAction($c->get(ServiceGalerieInterface::class));
+    },
+
+    RetirerPhotoAction::class => function (ContainerInterface $c): RetirerPhotoAction {
+        return new RetirerPhotoAction($c->get(ServiceGalerieInterface::class));
+    },
+
+    ListeGalerieParPhotographeAction::class => function (ContainerInterface $c): ListeGalerieParPhotographeAction {
+        return new ListeGalerieParPhotographeAction($c->get(ServiceGalerieInterface::class));
     },
 ];

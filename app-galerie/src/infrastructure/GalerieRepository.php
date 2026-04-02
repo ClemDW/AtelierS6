@@ -75,6 +75,39 @@ class GalerieRepository implements GalerieRepositoryInterface
         return $galeries;
     }
 
+    public function getGaleriesParPhotographe(string $photographeId): array
+    {
+        $stmt = $this->pdo->prepare('SELECT * FROM galerie WHERE photographe_id = :photographe_id');
+        $stmt->execute(['photographe_id' => $photographeId]);
+        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        $galeries = [];
+        foreach ($rows as $row) {
+            $emails_clients_stmt = $this->pdo->prepare('SELECT email FROM invitation WHERE galerie_id = :galerie_id');
+            $emails_clients_stmt->execute(['galerie_id' => $row['id']]);
+            $emails_clients = $emails_clients_stmt->fetchAll(PDO::FETCH_COLUMN);
+            $photosId_stmt = $this->pdo->prepare('SELECT * FROM galerie_photo WHERE galerie_id = :galerie_id');
+            $photosId_stmt->execute(['galerie_id' => $row['id']]);
+            $photosId = $photosId_stmt->fetchAll(PDO::FETCH_ASSOC);
+            $photos = $this->mapRowToPhoto($photosId);
+            $galeries[] = new Galerie(
+                $row['id'],
+                $row['photographe_id'],
+                $row['type_galerie'],
+                $row['titre'],
+                $row['description'],
+                $row['date_creation'],
+                $row['date_publication'] ?? '',
+                $row['est_publiee'],
+                $row['mode_mise_en_page'],
+                $emails_clients,
+                $row['code_acces'] ?? '',
+                $row['url_acces'] ?? '',
+                $photos
+            );
+        }
+        return $galeries;
+    }
+
     public function creerGalerie(Galerie $galerie): Galerie
     {
         $stmt = $this->pdo->prepare(
@@ -96,10 +129,12 @@ class GalerieRepository implements GalerieRepositoryInterface
         ]);
 
         foreach ($galerie->getEmailsClients() as $email) {
+            $stmtNextId = $this->pdo->query('SELECT COALESCE(MAX(id), 0) + 1 FROM invitation');
+            $nextId = (int) $stmtNextId->fetchColumn();
             $stmtInv = $this->pdo->prepare(
-                'INSERT INTO invitation (galerie_id, email) VALUES (:galerie_id, :email)'
+                'INSERT INTO invitation (id, galerie_id, email) VALUES (:id, :galerie_id, :email)'
             );
-            $stmtInv->execute(['galerie_id' => $galerie->getId(), 'email' => $email]);
+            $stmtInv->execute(['id' => $nextId, 'galerie_id' => $galerie->getId(), 'email' => $email]);
         }
 
         foreach ($galerie->getPhotos() as $photo) {
@@ -163,10 +198,11 @@ class GalerieRepository implements GalerieRepositoryInterface
         $stmt->execute(['galerie_id' => $galerieId, 'photo_id' => $photoId]);
     }
 
-    public function supprimerPhotoGalerie(string $galerieId, string $photoId): void
+    public function supprimerPhotoGalerie(string $galerieId, string $photoId): bool
     {
         $stmt = $this->pdo->prepare('DELETE FROM galerie_photo WHERE galerie_id = :galerie_id AND photo_id = :photo_id');
         $stmt->execute(['galerie_id' => $galerieId, 'photo_id' => $photoId]);
+        return $stmt->rowCount() > 0;
     }
 
     public function publierGalerie(string $galerieId): void
