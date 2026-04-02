@@ -43,4 +43,20 @@ interface AuthRepositoryInterface
      * @return bool
      */
     public function isValidRefreshToken(string $userId, string $refreshToken): bool;
+
+    /**
+     * Récupère un utilisateur via son refresh token
+     *
+     * @param string $refreshToken
+     * @return array|null
+     */
+    public function findUserByRefreshToken(string $refreshToken): ?array;
+
+    /**
+     * Supprime un refresh token ou tous les tokens échus
+     *
+     * @param string $refreshToken
+     * @return void
+     */
+    public function revokeRefreshToken(string $refreshToken): void;
 }
