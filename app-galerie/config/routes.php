@@ -11,6 +11,7 @@ use photopro\api\actions\ModifierPublicationGalerieAction;
 use photopro\api\actions\AjouterPhotoAction;
 use photopro\api\actions\RetirerPhotoAction;
 use photopro\api\actions\ListeGalerieParPhotographeAction;
+use photopro\api\actions\ModifierMiseEnPageAction;
 
 
 return function (App $app): App {
@@ -31,6 +32,7 @@ return function (App $app): App {
     });
     $app->post('/galeries', CreerGalerieAction::class);
     $app->patch('/galeries/{id}/publication', ModifierPublicationGalerieAction::class);
+    $app->patch('/galeries/{id}/mise-en-page', ModifierMiseEnPageAction::class);
     $app->post('/galeries/{id}/photos', AjouterPhotoAction::class);
     $app->delete('/galeries/{id}/photos/{photoId}', RetirerPhotoAction::class);
 

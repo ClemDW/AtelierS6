@@ -110,6 +110,12 @@ class ServiceGalerie implements ServiceGalerieInterface
         $this->galerieRepository->depublierGalerie($galerieId);
     }
 
+    public function modifierMiseEnPage(string $galerieId, string $miseEnPage): void
+    {
+        $this->getGalerieOuException($galerieId);
+        $this->galerieRepository->modifierMiseEnPage($galerieId, $miseEnPage);
+    }
+
     public function creerGalerie(CreerGalerieDTO $dto): GalerieAfficheDTO
     {
         $id = Uuid::uuid4()->toString();

@@ -216,4 +216,10 @@ class GalerieRepository implements GalerieRepositoryInterface
         $stmt = $this->pdo->prepare('UPDATE galerie SET est_publiee = FALSE, date_publication = NULL WHERE id = :id');
         $stmt->execute(['id' => $galerieId]);
     }
+
+    public function modifierMiseEnPage(string $galerieId, string $miseEnPage): void
+    {
+        $stmt = $this->pdo->prepare('UPDATE galerie SET mode_mise_en_page = :mode WHERE id = :id');
+        $stmt->execute(['mode' => $miseEnPage, 'id' => $galerieId]);
+    }
 }

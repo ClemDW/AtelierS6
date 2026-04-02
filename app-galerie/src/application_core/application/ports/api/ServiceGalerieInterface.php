@@ -18,4 +18,6 @@ interface ServiceGalerieInterface
     public function supprimerPhoto(string $galerieId, string $photoId): void;
     public function publierGalerie(string $galerieId): void;
     public function depublierGalerie(string $galerieId): void;
+    /** @throws GalerieNotFoundException */
+    public function modifierMiseEnPage(string $galerieId, string $miseEnPage): void;
 }

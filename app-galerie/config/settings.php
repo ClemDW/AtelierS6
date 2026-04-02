@@ -13,6 +13,7 @@ use photopro\api\actions\ModifierPublicationGalerieAction;
 use photopro\api\actions\AjouterPhotoAction;
 use photopro\api\actions\RetirerPhotoAction;
 use photopro\api\actions\ListeGalerieParPhotographeAction;
+use photopro\api\actions\ModifierMiseEnPageAction;
 
 return [
 
@@ -85,5 +86,9 @@ return [
 
     ListeGalerieParPhotographeAction::class => function (ContainerInterface $c): ListeGalerieParPhotographeAction {
         return new ListeGalerieParPhotographeAction($c->get(ServiceGalerieInterface::class));
+    },
+
+    ModifierMiseEnPageAction::class => function (ContainerInterface $c): ModifierMiseEnPageAction {
+        return new ModifierMiseEnPageAction($c->get(ServiceGalerieInterface::class));
     },
 ];
