@@ -4,7 +4,8 @@ FROM php:8.4-cli
 # basic update
 RUN apt-get update && \
     apt-get install --yes --force-yes \
-    cron openssl
+    cron openssl git unzip ca-certificates && \
+    rm -rf /var/lib/apt/lists/*
 
 # installing the docker php extensions installer
 RUN curl -sSLf \

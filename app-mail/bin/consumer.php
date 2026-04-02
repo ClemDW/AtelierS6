@@ -9,15 +9,15 @@ require_once __DIR__ . '/../vendor/autoload.php';
 
 use PhpAmqpLib\Connection\AMQPStreamConnection;
 use PhpAmqpLib\Message\AMQPMessage;
-use toubilib\mail\infrastructure\SymfonyMailerAdapter;
-use toubilib\mail\application\NotificationService;
+use photopro\mail\infrastructure\SymfonyMailerAdapter;
+use photopro\mail\application\NotificationService;
 
 // Configuration RabbitMQ 
 $rabbitHost = getenv('RABBITMQ_HOST');
 $rabbitPort = getenv('RABBITMQ_PORT');
 $rabbitUser = getenv('RABBITMQ_USER');
 $rabbitPass = getenv('RABBITMQ_PASS');
-$exchangeName = 'toubilib.events';
+$exchangeName = 'photopro.events';
 $queueName = 'rdv_notifications';
 $routingKey = 'rdv.*';
 
