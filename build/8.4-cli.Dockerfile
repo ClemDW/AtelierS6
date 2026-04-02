@@ -20,5 +20,9 @@ RUN install-php-extensions  pdo_mysql pdo_pgsql
 RUN install-php-extensions  xdebug
 RUN install-php-extensions @composer
 
+# Install Node.js for frontend
+RUN curl -fsSL https://deb.nodesource.com/setup_22.x | bash - && \
+    apt-get install -y nodejs
 
 EXPOSE 80
+EXPOSE 5173

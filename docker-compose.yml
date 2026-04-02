@@ -3,6 +3,20 @@ networks:
     driver: bridge
 
 services:
+  front.photopro:
+    build:
+      context: build
+      dockerfile: 8.4-cli.Dockerfile
+    working_dir: /app
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./front:/app
+      - /app/node_modules
+    networks:
+      - photopro.net
+    command: sh -c "npm install && npm run dev -- --host 0.0.0.0"
+
   gatewayfront.photopro:
     build:
       context: build
@@ -143,8 +157,6 @@ services:
         condition: service_started
     env_file: ./env/mail.env
     command: "php /var/www/bin/consumer.php"
-
-  # service photoproprat.db : base de données postgresql pour les praticiens
 
   galerie.db:
     image: "postgres:latest"
