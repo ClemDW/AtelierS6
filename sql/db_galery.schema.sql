@@ -1,3 +1,5 @@
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+
 -- 0. Table Photographe
 CREATE TABLE photographe (
     id UUID PRIMARY KEY, -- Même ID que l'utilisateur dans app-auth

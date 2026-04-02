@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace photopro\api\provider;
 
 use photopro\core\application\ports\api\dto\CredentialsDTO;
+use photopro\core\application\ports\api\dto\SignupDTO;
 use photopro\core\application\ports\api\dto\AuthDTO;
 use photopro\core\application\ports\api\dto\UserDTO;
 use photopro\api\provider\exceptions\AuthProviderInvalidCredentialsException;
@@ -18,11 +19,10 @@ interface AuthProviderInterface
 {
     /**
      * Enregistre un nouvel utilisateur
-     * @param CredentialsDTO $credentials Email et mot de passe
-     * @param int $role Le rôle de l'utilisateur (1=patient, 10=praticien, 100=admin)
+     * @param SignupDTO $credentials Email, mot de passe et nom
      * @return UserDTO Le profil créé
      */
-    public function signup(CredentialsDTO $credentials): UserDTO;
+    public function signup(SignupDTO $credentials): UserDTO;
 
     /**
      * Authentifie un utilisateur avec ses credentials

@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace photopro\api\provider;
 
 use photopro\core\application\ports\api\dto\CredentialsDTO;
+use photopro\core\application\ports\api\dto\SignupDTO;
 use photopro\core\application\ports\api\dto\AuthDTO;
 use photopro\core\application\ports\api\dto\UserDTO;
 use photopro\api\provider\AuthProviderInterface;
@@ -33,7 +34,7 @@ class JwtAuthProvider implements AuthProviderInterface
         $this->authRepository = $authRepository;
     }
 
-    public function signup(CredentialsDTO $credentials): UserDTO
+    public function signup(SignupDTO $credentials): UserDTO
     {
         return $this->authnService->signup($credentials);
     }
