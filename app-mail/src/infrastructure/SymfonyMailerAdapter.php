@@ -1,8 +1,8 @@
 <?php
 
-namespace toubilib\mail\infrastructure;
+namespace photopro\mail\infrastructure;
 
-use toubilib\mail\domain\MailerInterface;
+use photopro\mail\domain\MailerInterface;
 use Symfony\Component\Mailer\Mailer;
 use Symfony\Component\Mailer\Transport;
 use Symfony\Component\Mime\Email;
