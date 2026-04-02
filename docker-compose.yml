@@ -39,6 +39,8 @@ services:
     volumes:
       - ./gateway-back:/var/php
     working_dir: /var/php
+    env_file:
+      - ./env/jwt.env
     networks:
       - photopro.net
     command: "sh -lc '[ -d vendor ] || composer install --no-interaction --prefer-dist; php -S 0.0.0.0:80 -t /var/php/public'"
@@ -52,6 +54,8 @@ services:
     volumes:
       - ./app-auth:/var/php
     working_dir: /var/php
+    env_file:
+      - ./env/jwt.env
     networks:
       - photopro.net
     depends_on:
@@ -156,8 +160,6 @@ services:
         condition: service_healthy
       mail.photopro:
         condition: service_started
-    env_file: ./env/mail.env
-    command: "sh -lc '[ -d vendor ] || composer install --no-interaction --prefer-dist; php /var/www/bin/consumer.php'"
     env_file: ./app-mail/.env
     command: "php /var/www/bin/consumer.php"
 
@@ -203,6 +205,7 @@ services:
       - photopro.net
     volumes:
       - ./sql/db_user.schema.sql:/docker-entrypoint-initdb.d/01-db_user.schema.sql
+      - ./sql/seed_users.sql:/docker-entrypoint-initdb.d/02-seed_users.sql
 
   adminer:
     image: adminer

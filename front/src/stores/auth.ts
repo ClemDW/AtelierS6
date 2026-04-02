@@ -5,62 +5,40 @@ import { ofetch } from 'ofetch'
 export const useAuthStore = defineStore('auth', () => {
   // --- ÉTAT ---
   const token = ref<string | null>(localStorage.getItem('auth_token'))
-  const user = ref<{ id: string; email: string; role: string } | null>(null)
-  const loading = ref(false)
+  const user = ref<{ id?: string; email?: string; role?: string } | null>(null)
 
-  // --- GETTERS ---
   const isAuthenticated = computed(() => !!token.value)
 
-  // --- CLIENT API CONFIGURÉ ---
+  // --- LE CLIENT API ---
   const api = ofetch.create({
     baseURL: 'http://localhost:6081/api/back',
     async onRequest({ options }) {
+      const headers = new Headers(options.headers);
+
       if (token.value) {
-        const headers = new Headers(options.headers || {})
-        headers.set('Authorization', `Bearer ${token.value}`)
-        options.headers = headers
+        headers.set('Authorization', `Bearer ${token.value}`);
       }
-    },
-    async onResponseError({ response }) {
-      if (response.status === 401) {
-        // Si la gateway renvoie 401 (JWT invalide), on déconnecte
-        logout()
-      }
+
+      options.headers = headers;
     }
-  })
+  });
 
   // --- ACTIONS ---
-
   async function login(email: string, password?: string) {
-    loading.value = true
-    try {
-      // Appel vers /auth/signin (ton groupe de routes spécifique)
-      const response = await api('/auth/signin', {
-        method: 'POST',
-        body: { email, password }
-      })
+    const response = await api('/auth/signin', { method: 'POST', body: { email, password } })
 
-      // On stocke le token d'abord
-      token.value = response.token
-      localStorage.setItem('auth_token', response.token)
+    token.value = response.access_token
+    localStorage.setItem('auth_token', response.access_token)
 
-      // On récupère les infos de l'utilisateur via la route /me de la Gateway
-      await fetchUserProfile()
-
-    } catch (error) {
-      logout()
-      throw error
-    } finally {
-      loading.value = false
-    }
+    await fetchUserProfile()
   }
 
   async function fetchUserProfile() {
     try {
-      // Utilise la route /api/back/me définie dans ta Gateway
       const userData = await api('/me')
       user.value = userData
     } catch (error) {
+      console.error("Erreur profil:", error)
       logout()
     }
   }
@@ -71,12 +49,5 @@ export const useAuthStore = defineStore('auth', () => {
     localStorage.removeItem('auth_token')
   }
 
-  return {
-    isAuthenticated,
-    user,
-    loading,
-    login,
-    logout,
-    fetchUserProfile
-  }
+  return { token, user, isAuthenticated, login, logout, fetchUserProfile }
 })

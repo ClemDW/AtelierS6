@@ -17,7 +17,10 @@ const handleLogout = () => {
       <div class="nav-brand">Photo<span class="highlight">Pro</span></div>
       
       <div class="nav-user">
-        <span class="greeting">Hello, <strong>{{ authStore.user?.email || 'Photographer' }}</strong></span>
+        <div class="user-info">
+          <span class="greeting">Hello, <strong>{{ authStore.user?.email || 'Photographer' }}</strong></span>
+          <span v-if="authStore.user?.role" class="user-role">{{ authStore.user.role }}</span>
+        </div>
         <button @click="handleLogout" class="logout-btn">
           <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
           Logout
@@ -105,6 +108,25 @@ const handleLogout = () => {
 
 .greeting strong {
   color: #f8fafc;
+}
+
+.user-info {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  line-height: 1.2;
+}
+
+.user-role {
+  font-size: 0.7rem;
+  background: rgba(59, 130, 246, 0.2);
+  color: #60a5fa;
+  padding: 0.15rem 0.5rem;
+  border-radius: 4px;
+  text-transform: uppercase;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  margin-top: 4px;
 }
 
 .logout-btn {

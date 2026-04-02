@@ -22,7 +22,7 @@ class JwtManager implements JwtManagerInterface
     public function __construct(
         string $secret,
         string $issuer = 'photopro.api',
-        string $algorithm = 'HS512',
+        string $algorithm = 'HS256',
         int $accessTokenExpiry = 3600,
         int $refreshTokenExpiry = 2592000
     ) {
@@ -36,8 +36,8 @@ class JwtManager implements JwtManagerInterface
     public function create(UserDTO $profile, int $type): string
     {
         $now = time();
-        $expiry = $type === self::ACCESS_TOKEN 
-            ? $now + $this->accessTokenExpiry 
+        $expiry = $type === self::ACCESS_TOKEN
+            ? $now + $this->accessTokenExpiry
             : $now + $this->refreshTokenExpiry;
 
         $payload = [
@@ -55,7 +55,7 @@ class JwtManager implements JwtManagerInterface
     {
         try {
             $decoded = JWT::decode($token, new Key($this->secret, $this->algorithm));
-            
+
             return new UserDTO(
                 $decoded->sub,
                 $decoded->email
