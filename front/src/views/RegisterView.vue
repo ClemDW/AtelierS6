@@ -15,7 +15,7 @@ const errorMessage = ref('')
 
 const handleRegister = async () => {
   if (password.value !== confirmPassword.value) {
-    errorMessage.value = 'Passwords do not match.'
+    errorMessage.value = 'Les mots de passe ne correspondent pas.'
     return
   }
 
@@ -27,7 +27,7 @@ const handleRegister = async () => {
     await authStore.register(name.value, email.value, password.value)
     router.push({ name: 'home' })
   } catch (error) {
-    errorMessage.value = 'Registration failed. This email might already be in use.'
+    errorMessage.value = 'Échec de l\'inscription. Cet e-mail est peut-être déjà utilisé.'
   } finally {
     isLoading.value = false
   }
@@ -42,17 +42,17 @@ const handleRegister = async () => {
     <div class="login-card">
       <div class="card-header">
         <h1>Photo<span class="highlight">Pro</span></h1>
-        <p>Join our community of creators.</p>
+        <p>Rejoignez notre communauté de créateurs.</p>
       </div>
 
       <form @submit.prevent="handleRegister" class="form-container">
         <div class="input-group">
-          <label for="name">Full Name</label>
+          <label for="name">Prénom & NOM</label>
           <input 
             type="text" 
             id="name" 
             v-model="name" 
-            placeholder="John Doe" 
+            placeholder="John RED" 
             required 
             :disabled="isLoading"
           />
@@ -71,7 +71,7 @@ const handleRegister = async () => {
         </div>
         
         <div class="input-group">
-          <label for="password">Password</label>
+          <label for="password">Mot de passe</label>
           <input 
             type="password" 
             id="password" 
@@ -83,7 +83,7 @@ const handleRegister = async () => {
         </div>
 
         <div class="input-group">
-          <label for="confirmPassword">Confirm Password</label>
+          <label for="confirmPassword">Confirmer le mot de passe</label>
           <input 
             type="password" 
             id="confirmPassword" 
@@ -97,12 +97,12 @@ const handleRegister = async () => {
         <p v-if="errorMessage" class="error-text">{{ errorMessage }}</p>
 
         <button type="submit" class="submit-btn" :disabled="isLoading">
-          {{ isLoading ? 'Creating account...' : 'Create Account' }}
+          {{ isLoading ? 'Création du compte...' : 'Créer un compte' }}
         </button>
       </form>
       
       <div class="card-footer">
-        Already have an account? <RouterLink :to="{ name: 'login' }" class="link">Sign in</RouterLink>
+        Vous avez déjà un compte ? <RouterLink :to="{ name: 'login' }" class="link">Se connecter</RouterLink>
       </div>
     </div>
   </div>
