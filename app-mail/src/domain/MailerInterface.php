@@ -1,6 +1,6 @@
 <?php
 
-namespace toubilib\mail\domain;
+namespace photopro\mail\domain;
 
 /**
  * Interface pour l'envoi de mails

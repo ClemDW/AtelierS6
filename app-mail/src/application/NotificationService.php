@@ -1,8 +1,8 @@
 <?php
 
-namespace toubilib\mail\application;
+namespace photopro\mail\application;
 
-use toubilib\mail\domain\MailerInterface;
+use photopro\mail\domain\MailerInterface;
 
 
 class NotificationService
@@ -54,7 +54,7 @@ class NotificationService
         $specialite = $praticien['specialite'] ?? 'N/A';
         $patientNom = ($patient['prenom'] ?? '') . ' ' . ($patient['nom'] ?? '');
 
-        $subject = "Confirmation de rendez-vous - Toubilib";
+        $subject = "Confirmation de rendez-vous - photopro";
 
         if ($recipientType === 'patient') {
             $htmlBody = $this->buildPatientCreatedEmail($toName, $dateRdv, $duree, $motif, $praticienNom, $specialite);
@@ -75,7 +75,7 @@ class NotificationService
         $praticienNom = ($praticien['prenom'] ?? '') . ' ' . ($praticien['nom'] ?? '');
         $patientNom = ($patient['prenom'] ?? '') . ' ' . ($patient['nom'] ?? '');
 
-        $subject = "Annulation de rendez-vous - Toubilib";
+        $subject = "Annulation de rendez-vous - photopro";
 
         if ($recipientType === 'patient') {
             $htmlBody = $this->buildPatientCancelledEmail($toName, $dateRdv, $praticienNom);
@@ -108,7 +108,7 @@ class NotificationService
         <li><strong>Motif :</strong> {$motif}</li>
         <li><strong>Praticien :</strong> Dr. {$praticienNom} ({$specialite})</li>
     </ul>
-    <p>Cordialement,<br>Toubilib</p>
+    <p>Cordialement,<br>photopro</p>
 </body>
 </html>
 HTML;
@@ -132,7 +132,7 @@ HTML;
         <li><strong>Motif :</strong> {$motif}</li>
         <li><strong>Patient :</strong> {$patientNom}</li>
     </ul>
-    <p>Cordialement,<br>Toubilib</p>
+    <p>Cordialement,<br>photopro</p>
 </body>
 </html>
 HTML;
@@ -154,7 +154,7 @@ HTML;
         <li><strong>Date :</strong> {$date}</li>
         <li><strong>Praticien :</strong> Dr. {$praticienNom}</li>
     </ul>
-    <p>Cordialement,<br>Toubilib</p>
+    <p>Cordialement,<br>photopro</p>
 </body>
 </html>
 HTML;
@@ -176,7 +176,7 @@ HTML;
         <li><strong>Date :</strong> {$date}</li>
         <li><strong>Patient :</strong> {$patientNom}</li>
     </ul>
-    <p>Cordialement,<br>Toubilib</p>
+    <p>Cordialement,<br>photopro</p>
 </body>
 </html>
 HTML;
