@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { useAuthStore } from '../stores/auth'
 import { useRouter } from 'vue-router'
 
@@ -13,11 +13,12 @@ const confirmPassword = ref('')
 const isLoading = ref(false)
 const errorMessage = ref('')
 
+const passwordsMatch = computed(
+  () => confirmPassword.value === '' || password.value === confirmPassword.value
+)
+
 const handleRegister = async () => {
-  if (password.value !== confirmPassword.value) {
-    errorMessage.value = 'Les mots de passe ne correspondent pas.'
-    return
-  }
+  if (!passwordsMatch.value) return
 
   isLoading.value = true
   errorMessage.value = ''
@@ -27,7 +28,7 @@ const handleRegister = async () => {
     await authStore.register(name.value, email.value, password.value)
     router.push({ name: 'home' })
   } catch (error) {
-    errorMessage.value = 'Échec de l\'inscription. Cet e-mail est peut-être déjà utilisé.'
+    errorMessage.value = 'Échec de l\'inscription'
   } finally {
     isLoading.value = false
   }
@@ -92,6 +93,7 @@ const handleRegister = async () => {
             required 
             :disabled="isLoading"
           />
+          <p v-if="!passwordsMatch" class="error-text">Les mots de passe ne correspondent pas.</p>
         </div>
 
         <p v-if="errorMessage" class="error-text">{{ errorMessage }}</p>
