@@ -106,9 +106,9 @@ class StorageService
 
     public function store(InputPhotoDTO $dto): OutputPhotoDTO {
         try {
-            $uuid = $this->generateUuid();
+            $photoId = $this->generateUuid();
             $extension = $this->mimeToExtension($dto->mimeType);
-            $key = sprintf('users/%s/%s.%s', $dto->photoId, $uuid, $extension);
+            $key = sprintf('users/%s/%s.%s', $dto->ownerId, $photoId, $extension);
             
             // Stockage dans S3 avec métadonnées
             $this->s3_internal_client->putObject([
@@ -118,14 +118,15 @@ class StorageService
                 'ContentType' => $dto->mimeType,
                 'Metadata' => [
                     'date' => date('d/m/Y H:i:s'),
-                    'user_id' => $dto->photoId,
+                    'owner_id' => $dto->ownerId,
+                    'photo_id' => $photoId,
                 ]
             ]);
             
             // Génération de l'URL pré-signée pour accès direct
             $url = $this->getPresignedUrl($key);
             
-            return new OutputPhotoDTO($key, $url);
+            return new OutputPhotoDTO($photoId, $key, $url);
         } catch (\Aws\S3\Exception\S3Exception $e) {
             throw new StorageServiceException('Erreur S3 lors du stockage : ' . $e->getMessage(), 0, $e);
         }

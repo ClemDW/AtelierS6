@@ -8,7 +8,7 @@ services:
       context: build
       dockerfile: 8.4-cli.Dockerfile
     ports:
-      - "6080:80"
+      - "${GATEWAY_FRONT_PORT:-6080}:80"
     volumes:
       - ./gateway-front:/var/php
     working_dir: /var/php
@@ -21,7 +21,7 @@ services:
       context: build
       dockerfile: 8.4-cli.Dockerfile
     ports:
-      - "6081:80"
+      - "${GATEWAY_BACK_PORT:-6081}:80"
     volumes:
       - ./gateway-back:/var/php
     working_dir: /var/php
@@ -34,7 +34,7 @@ services:
       context: build
       dockerfile: 8.4-cli.Dockerfile
     ports:
-      - "6084:80"
+      - "${AUTH_SERVICE_PORT:-6084}:80"
     volumes:
       - ./app-auth:/var/php
     working_dir: /var/php
@@ -49,7 +49,7 @@ services:
       context: build
       dockerfile: 8.4-cli.Dockerfile
     ports:
-      - "6082:80"
+      - "${GALERIE_SERVICE_PORT:-6082}:80"
     volumes:
       - ./app-galerie:/var/php
     working_dir: /var/php
@@ -64,7 +64,7 @@ services:
       context: build
       dockerfile: 8.4-cli.Dockerfile
     ports:
-      - "6083:80"
+      - "${STORAGE_SERVICE_PORT:-6083}:80"
     volumes:
       - ./app-storage:/var/php
       - ./sql:/var/data
@@ -76,14 +76,15 @@ services:
     depends_on:
       - S3
       - galerie.db
-    command: "sh -lc 'composer install --no-interaction --prefer-dist; php -S 0.0.0.0:80 -t /var/php/public'"
+      - rabbitmq
+    command: "sh -lc 'composer install --no-interaction --prefer-dist; composer require php-amqplib/php-amqplib:^3.7 --no-interaction --prefer-dist; php -S 0.0.0.0:80 -t /var/php/public'"
 
   S3:
     image: chrislusf/seaweedfs:latest
     ports:
-      - "8333:8333"
-      - "9333:9333"
-      - "23646:23646"
+      - "${S3_PORT:-8333}:8333"
+      - "${S3_MASTER_PORT:-9333}:9333"
+      - "${S3_FILER_PORT:-23646}:23646"
     command: "server -dir=/data -s3 -s3.port=8333 -s3.config=/etc/seaweedfs/s3.json"
     networks:
       - photopro.net
@@ -97,8 +98,8 @@ services:
   rabbitmq:
     image: rabbitmq:4-management
     ports:
-      - "15672:15672"
-      - "5672:5672"
+      - "${RABBITMQ_MANAGEMENT_PORT:-15672}:15672"
+      - "${RABBITMQ_PORT:-5672}:5672"
     healthcheck:
       test: rabbitmq-diagnostics -q ping
       interval: 8s
@@ -109,8 +110,8 @@ services:
     volumes:
       - ./rabbitmq.photopro:/var/lib/rabbitmq
     environment:
-      RABBITMQ_DEFAULT_USER: photopro
-      RABBITMQ_DEFAULT_PASS: photopro
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_DEFAULT_USER:-photopro}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_DEFAULT_PASS:-photopro}
 
   ##############################################
   ### MailCatcher
@@ -122,7 +123,7 @@ services:
     networks:
       - photopro.net
     ports:
-      - "1080:1080"
+      - "${MAILCATCHER_PORT:-1080}:1080"
 
   ##############################################
   ### Service Mail (consommateur RabbitMQ)
@@ -144,13 +145,33 @@ services:
     env_file: ./env/mail.env
     command: "sh -lc '[ -d vendor ] || composer install --no-interaction --prefer-dist; php /var/www/bin/consumer.php'"
 
+  ##############################################
+  ### Service Galerie Consumer (RabbitMQ)
+  ##############################################
+  service-galerie-consumer.photopro:
+    build:
+      context: build
+      dockerfile: 8.4-cli.Dockerfile
+    volumes:
+      - ./app-galerie:/var/www
+    working_dir: /var/www
+    networks:
+      - photopro.net
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      galerie.db:
+        condition: service_started
+    env_file: ./env/galerie-consumer.env
+    command: "sh -lc '[ -d vendor ] || composer install --no-interaction --prefer-dist; composer require php-amqplib/php-amqplib:^3.7 --no-interaction --prefer-dist; php /var/www/bin/consumer.php'"
+
   # service photoproprat.db : base de données postgresql pour les praticiens
 
   galerie.db:
     image: "postgres:latest"
     env_file: ./env/galeriedb.env
     ports:
-      - "5432:5432"
+      - "${GALERIE_DB_PORT:-5432}:5432"
     networks:
       - photopro.net
     volumes:
@@ -160,7 +181,7 @@ services:
     image: "postgres:latest"
     env_file: ./env/userdb.env
     ports:
-      - "5433:5432"
+      - "${USER_DB_PORT:-5433}:5432"
     networks:
       - photopro.net
     volumes:
@@ -169,6 +190,6 @@ services:
   adminer:
     image: adminer
     ports:
-      - "8080:8080"
+      - "${ADMINER_PORT:-8080}:8080"
     networks:
       - photopro.net
