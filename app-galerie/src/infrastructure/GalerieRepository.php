@@ -108,6 +108,40 @@ class GalerieRepository implements GalerieRepositoryInterface
         return $galeries;
     }
 
+    public function getGalerieByCodeAcces(string $codeAcces): ?Galerie
+    {
+        $stmt = $this->pdo->prepare('SELECT * FROM galerie WHERE code_acces = :code_acces');
+        $stmt->execute(['code_acces' => $codeAcces]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        if ($row) {
+            $emails_clients_stmt = $this->pdo->prepare('SELECT email FROM invitation WHERE galerie_id = :galerie_id');
+            $emails_clients_stmt->execute(['galerie_id' => $row['id']]);
+            $emails_clients = $emails_clients_stmt->fetchAll(PDO::FETCH_COLUMN);
+            $photosId_stmt = $this->pdo->prepare('SELECT * FROM galerie_photo WHERE galerie_id = :galerie_id');
+            $photosId_stmt->execute(['galerie_id' => $row['id']]);
+            $photosId = $photosId_stmt->fetchAll(PDO::FETCH_ASSOC);
+            $photos = $this->mapRowToPhoto($photosId);
+            return new Galerie(
+                $row['id'],
+                $row['photographe_id'],
+                $row['type_galerie'],
+                $row['titre'],
+                $row['description'],
+                $row['date_creation'],
+                $row['date_publication'] ?? '',
+                $row['est_publiee'],
+                $row['mode_mise_en_page'],
+                $emails_clients,
+                $row['code_acces'] ?? '',
+                $row['url_acces'] ?? '',
+                $photos
+            );
+        } else {
+            return null;
+        }
+    }
+
+
     public function creerGalerie(Galerie $galerie): Galerie
     {
         $stmt = $this->pdo->prepare(
