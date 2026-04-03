@@ -7,7 +7,8 @@ use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\RequestHandlerInterface;
 use Psr\Http\Server\MiddlewareInterface;
 use photopro\api\provider\AuthProviderInterface;
-use photopro\core\domain\exceptions\AuthenticationException;
+use photopro\api\provider\exceptions\AuthProviderExpiredAccessTokenException;
+use photopro\api\provider\exceptions\AuthProviderInvalidAccessTokenException;
 
 /**
  * Middleware d'authentification JWT
@@ -31,19 +32,19 @@ class AuthnMiddleware implements MiddlewareInterface
                 return $this->createErrorResponse('Token d\'authentification manquant', 401);
             }
 
-            // Validation du token via le provider
-            $authTokenDTO = $this->authProvider->validateToken($token);
+            // Validation du token via provider
+            $userDTO = $this->authProvider->getSignedInUser($token);
             
             // Ajout du profil utilisateur dans les attributs de la requête
-            $request = $request->withAttribute('userProfile', $authTokenDTO->getUserProfile());
+            $request = $request->withAttribute('userProfile', $userDTO);
             // Ajout du token d'authentification dans les attributs de la requête
-            $request = $request->withAttribute('authToken', $authTokenDTO);
+            $request = $request->withAttribute('authToken', $token);
             
 
             // Passage à l'action suivante
             return $handler->handle($request);
 
-        } catch (AuthenticationException $e) {
+        } catch (AuthProviderExpiredAccessTokenException | AuthProviderInvalidAccessTokenException $e) {
             return $this->createErrorResponse($e->getMessage(), 401);
         } catch (\Exception $e) {
             return $this->createErrorResponse('Erreur d\'authentification', 500);
