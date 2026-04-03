@@ -14,6 +14,7 @@ return function (App $app): App {
     $container = $app->getContainer();
 
     $authProxy = $container->get(ProxyAction::class . '.authRoot');
+    $galerieRootProxy = $container->get(ProxyAction::class . '.galerieRoot');
     $galeriesProxy = $container->get(ProxyAction::class . '.galeriePlural');
     $galerieSingleProxy = $container->get(ProxyAction::class . '.galerieSingle');
     $storageProxy = $container->get(ProxyAction::class . '.storageRoot');
@@ -47,9 +48,14 @@ return function (App $app): App {
         });
     });
 
-    $app->group('/api/back', function (\Slim\Routing\RouteCollectorProxy $group) use ($galeriesProxy, $galerieSingleProxy, $storageProxy, $authProxy) {
+    $app->group('/api/back', function (\Slim\Routing\RouteCollectorProxy $group) use ($galerieRootProxy, $galeriesProxy, $galerieSingleProxy, $storageProxy, $authProxy) {
         $group->map(['GET', 'POST', 'PUT', 'PATCH', 'DELETE'], '/galeries[/{path:.*}]', $galeriesProxy);
         $group->map(['GET', 'POST', 'PUT', 'PATCH', 'DELETE'], '/galerie[/{path:.*}]', $galerieSingleProxy);
+        $group->get('/photographes/{photographeId}/galeries', function (Request $request, Response $response, array $args) use ($galerieRootProxy): Response {
+            return $galerieRootProxy($request, $response, ['path' => 'photographes/' . $args['photographeId'] . '/galeries']);
+        });
+        
+
 
         $group->post('/storage/users/{id}/photos', function (Request $request, Response $response, array $args) use ($storageProxy): Response {
             return $storageProxy($request, $response, ['path' => 'users/' . $args['id'] . '/photos']);
