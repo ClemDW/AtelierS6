@@ -136,12 +136,34 @@ services:
     working_dir: /var/www
     networks:
       - photopro.net
+    restart: unless-stopped
     depends_on:
       rabbitmq:
         condition: service_healthy
       mail.photopro:
         condition: service_started
     env_file: ./env/mail.env
+    command: "php /var/www/bin/consumer.php"
+
+  ##############################################
+  ### Service Galerie Consumer (RabbitMQ)
+  ##############################################
+  service-galerie-consumer.photopro:
+    build:
+      context: build
+      dockerfile: 8.4-cli.Dockerfile
+    volumes:
+      - ./app-galerie:/var/www
+    working_dir: /var/www
+    networks:
+      - photopro.net
+    restart: unless-stopped
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      galerie.db:
+        condition: service_started
+    env_file: ./galeriedb.env
     command: "php /var/www/bin/consumer.php"
 
   # service photoproprat.db : base de données postgresql pour les praticiens

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace photopro\api\actions;
 
 use photopro\core\application\ports\api\dto\CredentialsDTO;
+use photopro\core\application\ports\api\dto\SignupDTO;
 use photopro\api\provider\AuthProviderInterface;
 use photopro\api\provider\exceptions\AuthProviderInvalidCredentialsException;
 use Psr\Http\Message\ResponseInterface;
@@ -35,21 +36,23 @@ final class SignupAction extends AbstractAction
 
         $email = isset($data['email']) ? trim((string)$data['email']) : '';
         $password = isset($data['password']) ? (string)$data['password'] : '';
+        $name = isset($data['name']) ? trim((string)$data['name']) : '';
         $passwordConfirmation = isset($data['password_confirmation']) ? (string)$data['password_confirmation'] : null;
 
-        if ($email === '' || $password === '') {
-            throw new HttpBadRequestException($request, 'Email and password are required');
+        if ($email === '' || $password === '' || $name === '') {
+            throw new HttpBadRequestException($request, 'Email, password and name are required');
         }
 
         if ($passwordConfirmation !== null && $password !== $passwordConfirmation) {
             throw new HttpBadRequestException($request, 'Passwords do not match');
         }
 
+        $signupDto = new SignupDTO($email, $password, $name);
         $credentials = new CredentialsDTO($email, $password);
 
         try {
             // Créer l'utilisateur (le rôle ayant été retiré)
-            $profile = $this->authProvider->signup($credentials);
+            $profile = $this->authProvider->signup($signupDto);
             
             // Connecter immédiatement pour fournir les tokens
             $authDTO = $this->authProvider->signin($credentials);
