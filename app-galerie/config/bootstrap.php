@@ -8,10 +8,6 @@ $c = $builder->build();
 
 $app = AppFactory::createFromContainer($c);
 
-$dotenv = \Dotenv\Dotenv::createImmutable(__DIR__ . '/../../env', 'galeriedb.env');
-$dotenv->load();
-
-
 $app->addBodyParsingMiddleware();
 $app->addRoutingMiddleware();
 $app->addErrorMiddleware($c->get('displayErrorDetails'), false, false)
