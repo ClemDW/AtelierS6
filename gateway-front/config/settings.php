@@ -9,7 +9,7 @@ return [
     'logs.dir' => __DIR__ . '/../var/logs',
     
     'api.galerie' => [
-        'base_uri' => 'http://app-galerie:80',
+        'base_uri' => 'http://service-galerie.photopro:80', 
         'timeout' => 10.0,
     ],
 ];

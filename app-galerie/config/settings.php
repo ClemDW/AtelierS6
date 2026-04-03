@@ -27,11 +27,11 @@ return [
     // Base de données
     // ==============================
     PDO::class => function (): PDO {
-        $host     = $_ENV['DB_HOST'] ?? 'localhost';
-        $port     = $_ENV['DB_PORT'] ?? '3306';
-        $dbname   = $_ENV['DB_NAME'] ?? 'photopro';
-        $user     = $_ENV['DB_USER'] ?? 'root';
-        $password = $_ENV['DB_PASS'] ?? '';
+        $host     = $_ENV['DB_HOST'] ?? 'galerie.db';
+        $port     = $_ENV['DB_PORT'] ?? '5432';
+        $dbname   = $_ENV['DB_NAME'] ?? 'galeriedb';
+        $user     = $_ENV['DB_USER'] ?? 'admin';
+        $password = $_ENV['DB_PASS'] ?? 'admin';
         $dsn = "pgsql:host={$host};port={$port};dbname={$dbname}";
         return new PDO($dsn, $user, $password, [
             PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,

@@ -16,13 +16,11 @@ class Cors implements MiddlewareInterface
         RequestHandlerInterface $handler
     ): ResponseInterface {
         
-        // Traiter les requêtes OPTIONS (preflight CORS)
         if ($request->getMethod() === 'OPTIONS') {
             $response = new \Slim\Psr7\Response();
             return $this->addCorsHeaders($response);
         }
         
-        // Traiter les requêtes normales
         $response = $handler->handle($request);
         return $this->addCorsHeaders($response);
     }
