@@ -29,7 +29,7 @@ class GalerieRepository implements GalerieRepositoryInterface
                     $photo['id'],
                     $photo['owner_id'],
                     $photo['mime_type'],
-                    $photo['taille_mo'],
+                    (float) ($photo['taille_mo'] ?? 0),
                     $photo['nom_original'],
                     $photo['cle_s3'],
                     $photo['titre'],
