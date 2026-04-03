@@ -14,6 +14,7 @@ use \photopro\api\actions\LogoutAction;
 
 return function (App $app): App {
 
+    $app->post('/register', SignupAction::class)->setName('auth.register');
     $app->post('/signin', SigninAction::class)->setName('auth.signin');
     $app->post('/signup', SignupAction::class)->setName('auth.signup');
     $app->post('/refresh', RefreshTokenAction::class)->setName('auth.refresh');

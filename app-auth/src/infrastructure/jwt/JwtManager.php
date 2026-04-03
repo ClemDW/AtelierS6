@@ -22,7 +22,7 @@ class JwtManager implements JwtManagerInterface
     public function __construct(
         string $secret,
         string $issuer = 'photopro.api',
-        string $algorithm = 'HS512',
+        string $algorithm = 'HS256',
         int $accessTokenExpiry = 3600,
         int $refreshTokenExpiry = 2592000
     ) {

@@ -24,6 +24,8 @@ services:
       - "${GATEWAY_BACK_PORT:-6081}:80"
     volumes:
       - ./gateway-back:/var/php
+    env_file:
+      - ./env/jwt.env
     working_dir: /var/php
     networks:
       - photopro.net
