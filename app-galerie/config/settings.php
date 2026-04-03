@@ -1,35 +1,19 @@
 <?php
 declare(strict_types=1);
 
-use Dotenv\Dotenv;
 use Psr\Container\ContainerInterface;
-
-
-
-
-// === Authn / Authz ===
-/*
-use photopro\core\application\usecases\photoproAuthnService;
-use photopro\core\application\ports\api\photoproAuthnServiceInterface;
-use photopro\core\application\ports\spi\repositoryInterfaces\AuthRepositoryInterface;
-use photopro\infra\repositories\AuthRepository;
-use photopro\api\provider\AuthProviderInterface;
-use photopro\api\provider\jwt\JwtAuthProvider;
-use photopro\api\provider\jwt\JwtManagerInterface;
-use photopro\api\provider\jwt\JwtManager;
-use photopro\api\middlewares\AuthnMiddleware;
-*/
-
-//use photopro\api\actions\SigninAction;
-//use photopro\api\actions\ListerPraticienAction;
-use photopro\api\actions\ListerPraticienRdvAction;
-use photopro\api\actions\ConsulterRdvAction;
-use photopro\api\actions\CreerRdvAction;
-use photopro\api\actions\CreerPatientAction;
-use photopro\api\actions\CreerIndisponibiliteAction;
-
-$dotenv = Dotenv::createImmutable(__DIR__ . '/../../env', 'galeriedb.env');
-$dotenv->load();
+use photopro\core\application\ports\api\ServiceGalerieInterface;
+use photopro\core\application\ports\spi\GalerieRepositoryInterface;
+use photopro\core\application\usecases\ServiceGalerie;
+use photopro\infra\GalerieRepository;
+use photopro\api\actions\ListeGalerieAction;
+use photopro\api\actions\AfficherGalerieAction;
+use photopro\api\actions\CreerGalerieAction;
+use photopro\api\actions\ModifierPublicationGalerieAction;
+use photopro\api\actions\AjouterPhotoAction;
+use photopro\api\actions\RetirerPhotoAction;
+use photopro\api\actions\ListeGalerieParPhotographeAction;
+use photopro\api\actions\ModifierMiseEnPageAction;
 
 return [
 
@@ -38,4 +22,73 @@ return [
     // ==============================
     'displayErrorDetails' => true,
     'logs.dir' => __DIR__ . '/../var/logs',
+
+    // ==============================
+    // Base de données
+    // ==============================
+    PDO::class => function (): PDO {
+        $host     = $_ENV['DB_HOST'] ?? 'localhost';
+        $port     = $_ENV['DB_PORT'] ?? '3306';
+        $dbname   = $_ENV['DB_NAME'] ?? 'photopro';
+        $user     = $_ENV['DB_USER'] ?? 'root';
+        $password = $_ENV['DB_PASS'] ?? '';
+        $dsn = "pgsql:host={$host};port={$port};dbname={$dbname}";
+        return new PDO($dsn, $user, $password, [
+            PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
+            PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+        ]);
+    },
+
+    // ==============================
+    // Repository
+    // ==============================
+    GalerieRepository::class => function (ContainerInterface $c): GalerieRepository {
+        return new GalerieRepository($c->get(PDO::class));
+    },
+
+    GalerieRepositoryInterface::class => function (ContainerInterface $c): GalerieRepository {
+        return $c->get(GalerieRepository::class);
+    },
+
+    // ==============================
+    // Service
+    // ==============================
+    ServiceGalerieInterface::class => function (ContainerInterface $c): ServiceGalerie {
+        return new ServiceGalerie($c->get(GalerieRepository::class));
+    },
+
+    // ==============================
+    // Actions
+    // ==============================
+    ListeGalerieAction::class => function (ContainerInterface $c): ListeGalerieAction {
+        return new ListeGalerieAction($c->get(ServiceGalerieInterface::class));
+    },
+
+    AfficherGalerieAction::class => function (ContainerInterface $c): AfficherGalerieAction {
+        return new AfficherGalerieAction($c->get(ServiceGalerieInterface::class));
+    },
+
+    CreerGalerieAction::class => function (ContainerInterface $c): CreerGalerieAction {
+        return new CreerGalerieAction($c->get(ServiceGalerieInterface::class));
+    },
+
+    ModifierPublicationGalerieAction::class => function (ContainerInterface $c): ModifierPublicationGalerieAction {
+        return new ModifierPublicationGalerieAction($c->get(ServiceGalerieInterface::class));
+    },
+
+    AjouterPhotoAction::class => function (ContainerInterface $c): AjouterPhotoAction {
+        return new AjouterPhotoAction($c->get(ServiceGalerieInterface::class));
+    },
+
+    RetirerPhotoAction::class => function (ContainerInterface $c): RetirerPhotoAction {
+        return new RetirerPhotoAction($c->get(ServiceGalerieInterface::class));
+    },
+
+    ListeGalerieParPhotographeAction::class => function (ContainerInterface $c): ListeGalerieParPhotographeAction {
+        return new ListeGalerieParPhotographeAction($c->get(ServiceGalerieInterface::class));
+    },
+
+    ModifierMiseEnPageAction::class => function (ContainerInterface $c): ModifierMiseEnPageAction {
+        return new ModifierMiseEnPageAction($c->get(ServiceGalerieInterface::class));
+    },
 ];
