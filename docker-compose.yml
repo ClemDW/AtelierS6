@@ -52,6 +52,7 @@ services:
       - "6082:80"
     volumes:
       - ./app-galerie:/var/php
+      - ./env:/var/env
     working_dir: /var/php
     networks:
       - photopro.net
