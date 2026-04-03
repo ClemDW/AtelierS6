@@ -71,7 +71,7 @@ class PDOAuthRepository implements AuthRepositoryInterface
 
     public function saveRefreshToken(string $userId, string $refreshToken, \DateTime $expiresAt): void
     {
-        $sql = 'UPDATE users SET refresh_token = :token, token_expires_at = :expires_at WHERE id = :id';
+        $sql = 'INSERT INTO refresh_tokens (token, user_id, expires_at) VALUES (:token, :id, :expires_at)';
         
         try {
             $stmt = $this->pdo->prepare($sql);
@@ -87,7 +87,7 @@ class PDOAuthRepository implements AuthRepositoryInterface
 
     public function isValidRefreshToken(string $userId, string $refreshToken): bool
     {
-        $sql = 'SELECT 1 FROM users WHERE id = :id AND refresh_token = :token AND token_expires_at > NOW() LIMIT 1';
+        $sql = 'SELECT 1 FROM refresh_tokens WHERE user_id = :id AND token = :token AND expires_at > NOW() LIMIT 1';
         
         try {
             $stmt = $this->pdo->prepare($sql);
@@ -99,6 +99,42 @@ class PDOAuthRepository implements AuthRepositoryInterface
             return (bool) $stmt->fetchColumn();
         } catch (\PDOException $e) {
             return false;
+        }
+    }
+
+    public function findUserByRefreshToken(string $refreshToken): ?array
+    {
+        $sql = 'SELECT u.id, u.email, u.password 
+                FROM users u
+                INNER JOIN refresh_tokens rt ON u.id = rt.user_id
+                WHERE rt.token = :token AND rt.expires_at > NOW() 
+                LIMIT 1';
+        
+        try {
+            $stmt = $this->pdo->prepare($sql);
+            $stmt->execute(['token' => $refreshToken]);
+            $row = $stmt->fetch(\PDO::FETCH_ASSOC);
+
+            if (!$row) return null;
+
+            return [
+                'id' => (string)$row['id'],
+                'email' => (string)$row['email'],
+                'password' => (string)$row['password']
+            ];
+        } catch (\PDOException $e) {
+            return null;
+        }
+    }
+
+    public function revokeRefreshToken(string $refreshToken): void
+    {
+        $sql = 'DELETE FROM refresh_tokens WHERE token = :token';
+        try {
+            $stmt = $this->pdo->prepare($sql);
+            $stmt->execute(['token' => $refreshToken]);
+        } catch (\PDOException $e) {
+            // Log or ignore
         }
     }
 }

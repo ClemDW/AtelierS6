@@ -45,7 +45,7 @@ class JwtAuthProvider implements AuthProviderInterface
             $profile = $this->authnService->byCredentials($credentials);
 
             $accessToken = $this->jwtManager->create($profile, JwtManagerInterface::ACCESS_TOKEN);
-            $refreshToken = $this->jwtManager->create($profile, JwtManagerInterface::REFRESH_TOKEN);
+            $refreshToken = bin2hex(random_bytes(32));
 
             // 30 jours
             $expiresAt = new \DateTime('+30 days');
@@ -73,25 +73,28 @@ class JwtAuthProvider implements AuthProviderInterface
     public function refresh(string $refreshToken): AuthDTO
     {
         try {
-            // Valider le refresh token et récupérer le profil
-            $profile = $this->jwtManager->validate($refreshToken);
+            // Vérifier que le refresh token existe dans la BDD et récupérer l'utilisateur
+            $userRow = $this->authRepository->findUserByRefreshToken($refreshToken);
 
-            // Vérifier que le refresh token existe dans la BDD et est valide
-            if (!$this->authRepository->isValidRefreshToken($profile->id, $refreshToken)) {
-                throw new AuthProviderInvalidAccessTokenException('Refresh token is invalidated or does not exist.');
+            if (!$userRow) {
+                throw new AuthProviderInvalidAccessTokenException('Refresh token is invalid or expired.');
             }
+
+            // Construire le UserDTO avec les infos récupérées
+            $profile = new UserDTO($userRow['id'], $userRow['email']);
+
+            // Supprimer l'ancien refresh token (Rotation de Token pour la sécurité)
+            $this->authRepository->revokeRefreshToken($refreshToken);
 
             // Générer de nouveaux tokens
             $newAccessToken = $this->jwtManager->create($profile, JwtManagerInterface::ACCESS_TOKEN);
-            $newRefreshToken = $this->jwtManager->create($profile, JwtManagerInterface::REFRESH_TOKEN);
+            $newRefreshToken = bin2hex(random_bytes(32));
 
             $expiresAt = new \DateTime('+30 days');
             $this->authRepository->saveRefreshToken($profile->id, $newRefreshToken, $expiresAt);
 
             return new AuthDTO($profile, $newAccessToken, $newRefreshToken);
-        } catch (JwtManagerExpiredTokenException $e) {
-            throw new AuthProviderExpiredAccessTokenException('Refresh token expired', 0, $e);
-        } catch (JwtManagerInvalidTokenException $e) {
+        } catch (\Exception $e) {
             throw new AuthProviderInvalidAccessTokenException('Invalid refresh token', 0, $e);
         }
     }
