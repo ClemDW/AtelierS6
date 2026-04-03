@@ -10,10 +10,12 @@ use Slim\Exception\HttpInternalServerErrorException;
 use storage\core\dto\InputPhotoDTO;
 use storage\core\usecases\StorageService;
 use storage\core\usecases\StorageServiceException;
+use storage\infra\messaging\PhotoUploadedPublisher;
 
 class UploadAction
 {
     private StorageService $storageService;
+    private PhotoUploadedPublisher $publisher;
 
     private const array ALLOWED_MIME = [
         'image/jpeg',
@@ -23,8 +25,10 @@ class UploadAction
     ];
     // Taille maximale : 10 Mo
     private const int MAX_SIZE = 10 * 1024 * 1024;
-    public function __construct(StorageService $storageService) {
+
+    public function __construct(StorageService $storageService, PhotoUploadedPublisher $publisher) {
         $this->storageService = $storageService;
+        $this->publisher = $publisher;
     }
 
     public function __invoke(
@@ -43,6 +47,17 @@ class UploadAction
 
         /** @var UploadedFileInterface $upload */
         $upload = $files['photo'];
+        $clientFileName = (string) ($upload->getClientFilename() ?? 'photo');
+        $sizeBytes = (int) ($upload->getSize() ?? 0);
+        $sizeMo = round($sizeBytes / 1024 / 1024, 2);
+        $parsedBody = $request->getParsedBody();
+        $title = null;
+        if (is_array($parsedBody) && isset($parsedBody['titre'])) {
+            $title = trim((string) $parsedBody['titre']);
+            if ($title === '') {
+                $title = null;
+            }
+        }
 
         // 2. Erreur d'upload PHP ?
         if ($upload->getError() !== UPLOAD_ERR_OK) {
@@ -63,17 +78,49 @@ class UploadAction
 
         try {
             // Création du DTO d'entrée
-            $inputDTO = new InputPhotoDTO((string)$photograph_id, $upload->getStream(), $mimeType);
+            $inputDTO = new InputPhotoDTO(
+                (string) $photograph_id,
+                $upload->getStream(),
+                $mimeType,
+                $sizeMo,
+                $clientFileName,
+                $title
+            );
             
             // stockage dans le storage service via le DTO
             $outputDTO = $this->storageService->store($inputDTO);
-            
+
+            $event = [
+                'event_type' => 'photo.uploaded',
+                'timestamp' => date(DATE_ATOM),
+                'photo' => [
+                    'id' => $outputDTO->photoId,
+                    'owner_id' => (string) $photograph_id,
+                    'mime_type' => $mimeType,
+                    'taille_mo' => $sizeMo,
+                    'nom_original' => $clientFileName,
+                    'titre' => $title,
+                    'cle_s3' => $outputDTO->key,
+                ],
+            ];
+
+            $this->publisher->publish($event);
+
+            $photoId = $outputDTO->photoId;
             $key = $outputDTO->key;
             $url = $outputDTO->url;
         } catch (StorageServiceException $e) {
             throw new HttpInternalServerErrorException($request, 'erreur stockage : '. $e->getMessage());
+        } catch (\RuntimeException $e) {
+            throw new HttpInternalServerErrorException($request, 'erreur publication evenement : '. $e->getMessage());
         }
-        $response->getBody()->write(json_encode(['key'=>$key, 'url'=>$url]));
+
+        $response->getBody()->write(json_encode([
+            'photo_id' => $photoId,
+            'key' => $key,
+            'url' => $url,
+            'queued' => true,
+        ]));
         return $response->withStatus(201);
 
     }

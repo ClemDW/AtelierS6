@@ -7,99 +7,105 @@ require_once __DIR__ . '/../vendor/autoload.php';
 use PhpAmqpLib\Connection\AMQPStreamConnection;
 use PhpAmqpLib\Message\AMQPMessage;
 
-// Configuration connexion BDD Galerie (PostgreSQL)
-// En environnement docker, on récupère via getenv. Adaptez si vous utilisez un .ini ou .env spécifique
-$dbHost = getenv('DB_HOST') ?: 'galerie.db';
-$dbName = getenv('POSTGRES_DB') ?: 'galeriedb';
-$dbUser = getenv('POSTGRES_USER') ?: 'admin';
-$dbPass = getenv('POSTGRES_PASSWORD') ?: 'admin';
-
-try {
-    $pdo = new PDO("pgsql:host=$dbHost;dbname=$dbName", $dbUser, $dbPass, [
-        PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION
-    ]);
-    echo "[Consumer Galerie] Connecté à la base de données PostgreSQL.\n";
-} catch (PDOException $e) {
-    die("Erreur de connexion à la base de données : " . $e->getMessage() . "\n");
-}
-
-// Configuration RabbitMQ
 $rabbitHost = getenv('RABBITMQ_HOST') ?: 'rabbitmq';
-$rabbitPort = (int)(getenv('RABBITMQ_PORT') ?: 5672);
+$rabbitPort = (int) (getenv('RABBITMQ_PORT') ?: '5672');
 $rabbitUser = getenv('RABBITMQ_USER') ?: 'photopro';
 $rabbitPass = getenv('RABBITMQ_PASS') ?: 'photopro';
+$exchange = getenv('RABBITMQ_EXCHANGE') ?: 'photopro.events';
+$queueName = getenv('RABBITMQ_QUEUE_GALERIE_PHOTOS') ?: 'galerie_photos';
+$routingKey = getenv('RABBITMQ_ROUTING_KEY_PHOTO_UPLOADED') ?: 'photo.uploaded';
 
-$exchangeName = 'photopro.events';
-$queueName = 'sync_photographe_queue'; // La file d'attente spécifique pour la galerie
-$routingKey = 'user.registered';
+$dbHost = getenv('DB_HOST') ?: 'galerie.db';
+$dbPort = getenv('DB_PORT') ?: '5432';
+$dbName = getenv('DB_NAME') ?: 'galeriedb';
+$dbUser = getenv('DB_USER') ?: 'admin';
+$dbPass = getenv('DB_PASS') ?: 'admin';
+
+$dsn = sprintf('pgsql:host=%s;port=%s;dbname=%s', $dbHost, $dbPort, $dbName);
+
+echo "[GalerieConsumer] Starting...\n";
+echo "[GalerieConsumer] RabbitMQ: {$rabbitHost}:{$rabbitPort} exchange={$exchange} queue={$queueName}\n";
+echo "[GalerieConsumer] DB: {$dbHost}:{$dbPort}/{$dbName}\n";
+
+$pdo = new PDO($dsn, $dbUser, $dbPass, [
+    PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+    PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+]);
+
+$connection = new AMQPStreamConnection($rabbitHost, $rabbitPort, $rabbitUser, $rabbitPass);
+$channel = $connection->channel();
+
+$channel->exchange_declare($exchange, 'topic', false, true, false);
+$channel->queue_declare($queueName, false, true, false, false);
+$channel->queue_bind($queueName, $exchange, $routingKey);
+$channel->basic_qos(null, 1, null);
+
+$insertSql = <<<SQL
+INSERT INTO photo (id, owner_id, mime_type, taille_mo, nom_original, cle_s3, titre)
+VALUES (:id, :owner_id, :mime_type, :taille_mo, :nom_original, :cle_s3, :titre)
+ON CONFLICT (id) DO UPDATE SET
+    owner_id = EXCLUDED.owner_id,
+    mime_type = EXCLUDED.mime_type,
+    taille_mo = EXCLUDED.taille_mo,
+    nom_original = EXCLUDED.nom_original,
+    cle_s3 = EXCLUDED.cle_s3,
+    titre = EXCLUDED.titre
+SQL;
+
+$insertStmt = $pdo->prepare($insertSql);
+
+$callback = function (AMQPMessage $message) use ($insertStmt): void {
+    echo "\n[GalerieConsumer] Message received\n";
+
+    $payload = json_decode($message->getBody(), true);
+    if (!is_array($payload)) {
+        echo "[GalerieConsumer] Invalid JSON, ack and skip\n";
+        $message->ack();
+        return;
+    }
+
+    $eventType = (string) ($payload['event_type'] ?? '');
+    if ($eventType !== 'photo.uploaded') {
+        echo "[GalerieConsumer] Unsupported event '{$eventType}', ack and skip\n";
+        $message->ack();
+        return;
+    }
+
+    $photo = $payload['photo'] ?? null;
+    if (!is_array($photo)) {
+        echo "[GalerieConsumer] Missing photo payload, ack and skip\n";
+        $message->ack();
+        return;
+    }
+
+    try {
+        $insertStmt->execute([
+            ':id' => (string) ($photo['id'] ?? ''),
+            ':owner_id' => (string) ($photo['owner_id'] ?? ''),
+            ':mime_type' => (string) ($photo['mime_type'] ?? ''),
+            ':taille_mo' => (float) ($photo['taille_mo'] ?? 0),
+            ':nom_original' => (string) ($photo['nom_original'] ?? 'photo'),
+            ':cle_s3' => (string) ($photo['cle_s3'] ?? ''),
+            ':titre' => isset($photo['titre']) ? (string) $photo['titre'] : null,
+        ]);
+
+        echo "[GalerieConsumer] Photo persisted: id=" . (string) ($photo['id'] ?? '') . "\n";
+        $message->ack();
+    } catch (Throwable $e) {
+        echo "[GalerieConsumer] DB error: {$e->getMessage()}\n";
+        $message->nack(false, true);
+    }
+};
+
+$channel->basic_consume($queueName, '', false, false, false, false, $callback);
+
+echo "[GalerieConsumer] Waiting for messages...\n";
 
 try {
-    $connection = new AMQPStreamConnection($rabbitHost, $rabbitPort, $rabbitUser, $rabbitPass);
-    $channel = $connection->channel();
-    echo "[Consumer Galerie] Connecté à RabbitMQ.\n";
-
-    // On s'assure que l'exchange existe
-    $channel->exchange_declare($exchangeName, 'topic', false, true, false);
-
-    // Déclaration de la file
-    $channel->queue_declare($queueName, false, true, false, false);
-
-    // Lier la file à l'exchange pour tout ce qui concerne les inscriptions
-    $channel->queue_bind($queueName, $exchangeName, $routingKey);
-
-    echo "[Consumer Galerie] En attente de nouveaux photographes. Pour quitter, pressez CTRL+C\n";
-
-    $callback = function (AMQPMessage $message) use ($pdo) {
-        $body = json_decode($message->getBody(), true);
-        echo "=====================================\n";
-        echo "[x] Reçu: ", $message->getBody(), "\n";
-
-        if (isset($body['event_type']) && $body['event_type'] === 'user.registered' && isset($body['payload'])) {
-            $data = $body['payload'];
-
-            try {
-                // Insertion dans la table photographe de db_galery
-                $stmt = $pdo->prepare(
-                    "INSERT INTO photographe (id, nom, pseudo, email_contact) 
-                     VALUES (:id, :nom, :pseudo, :email)"
-                );
-
-                $stmt->execute([
-                    ':id' => $data['id'],
-                    ':nom' => $data['name'],
-                    ':pseudo' => $data['pseudo'],
-                    ':email' => $data['email']
-                ]);
-
-                echo "[OK] Photographe {$data['pseudo']} inséré en base avec succès !\n";
-                // Validation du message (Ack)
-                $message->ack();
-            } catch (PDOException $e) {
-                // Si l'utilisateur existe déjà (relance du script etc), on peut l'ignorer
-                if ($e->getCode() == 23505) { // 23505 = unique_violation dans Postgres
-                    echo "[INFO] Le photographe {$data['pseudo']} existe déjà en BDD.\n";
-                    $message->ack();
-                } else {
-                    echo "[ERREUR SQL] : " . $e->getMessage() . "\n";
-                    // On ne fait pas un ack() automatique si on veut que le message soit retry plus tard 
-                    // Mais pour la robustesse, on peut le rejeter avec nack
-                    $message->nack(true);
-                }
-            }
-        } else {
-            echo "[INFO] Message ignoré (format inattendu)\n";
-            $message->ack();
-        }
-    };
-
-    $channel->basic_consume($queueName, '', false, false, false, false, $callback);
-
     while ($channel->is_consuming()) {
         $channel->wait();
     }
-
+} finally {
     $channel->close();
     $connection->close();
-} catch (\Exception $e) {
-    die("Erreur RabbitMQ : " . $e->getMessage() . "\n");
 }

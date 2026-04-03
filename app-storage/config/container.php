@@ -5,6 +5,7 @@ use Psr\Container\ContainerInterface;
 use storage\api\actions\UploadAction;
 use storage\api\actions\GetPhotoAction;
 use storage\core\usecases\StorageService;
+use storage\infra\messaging\PhotoUploadedPublisher;
 
 return [
     'internal_endpoint' => $_ENV['S3_INTERNAL_ENDPOINT'] ?? getenv('S3_INTERNAL_ENDPOINT') ?? 'http://s3.service:8333',
@@ -13,6 +14,12 @@ return [
     'key' => $_ENV['S3_ACCESS_KEY'] ?? getenv('S3_ACCESS_KEY') ?? 'some_access_key',
     'secret' => $_ENV['S3_SECRET_KEY'] ?? getenv('S3_SECRET_KEY') ?? 'some_secret_key',
     'bucket' => $_ENV['S3_BUCKET'] ?? getenv('S3_BUCKET') ?? 'photopro',
+    'rabbitmq.host' => $_ENV['RABBITMQ_HOST'] ?? getenv('RABBITMQ_HOST') ?? 'rabbitmq',
+    'rabbitmq.port' => (int) ($_ENV['RABBITMQ_PORT'] ?? getenv('RABBITMQ_PORT') ?? 5672),
+    'rabbitmq.user' => $_ENV['RABBITMQ_USER'] ?? getenv('RABBITMQ_USER') ?? 'photopro',
+    'rabbitmq.pass' => $_ENV['RABBITMQ_PASS'] ?? getenv('RABBITMQ_PASS') ?? 'photopro',
+    'rabbitmq.exchange' => $_ENV['RABBITMQ_EXCHANGE'] ?? getenv('RABBITMQ_EXCHANGE') ?? 'photopro.events',
+    'rabbitmq.routing_key.photo_uploaded' => $_ENV['RABBITMQ_ROUTING_KEY_PHOTO_UPLOADED'] ?? getenv('RABBITMQ_ROUTING_KEY_PHOTO_UPLOADED') ?? 'photo.uploaded',
 
     // Base de données
     PDO::class => function(ContainerInterface $c) {
@@ -56,8 +63,18 @@ return [
     StorageService::class => function(ContainerInterface $c){
     return new StorageService($c->get('S3_internal_client'),$c->get('S3_external_client'), $c->get('bucket'), $c->get(PDO::class));
     },
+    PhotoUploadedPublisher::class => function (ContainerInterface $c) {
+        return new PhotoUploadedPublisher(
+            $c->get('rabbitmq.host'),
+            $c->get('rabbitmq.port'),
+            $c->get('rabbitmq.user'),
+            $c->get('rabbitmq.pass'),
+            $c->get('rabbitmq.exchange'),
+            $c->get('rabbitmq.routing_key.photo_uploaded')
+        );
+    },
     UploadAction::class => function(ContainerInterface $c){
-    return new UploadAction($c->get(StorageService::class));
+    return new UploadAction($c->get(StorageService::class), $c->get(PhotoUploadedPublisher::class));
     },
     GetPhotoAction::class => function(ContainerInterface $c){
     return new GetPhotoAction($c->get(StorageService::class));
