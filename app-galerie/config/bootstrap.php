@@ -8,7 +8,7 @@ $c = $builder->build();
 
 $app = AppFactory::createFromContainer($c);
 
-$dotenv = \Dotenv\Dotenv::createImmutable(__DIR__);
+$dotenv = \Dotenv\Dotenv::createImmutable(__DIR__ . '/../../env', 'galeriedb.env');
 $dotenv->load();
 
 

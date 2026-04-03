@@ -1,8 +1,4 @@
-<?php
+<?php 
+namespace storage\core\usecases; 
 
-namespace storage\core\usecases;
-
-class StorageServiceException extends \Exception
-{
-
-}
+class StorageServiceException extends \Exception {}
