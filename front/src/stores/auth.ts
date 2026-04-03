@@ -33,6 +33,19 @@ export const useAuthStore = defineStore('auth', () => {
     await fetchUserProfile()
   }
 
+  async function register(name: string, email: string, password?: string) {
+    const response = await api('/auth/register', { 
+      method: 'POST', 
+      body: { name, email, password } 
+    })
+
+    if (response.access_token) {
+      token.value = response.access_token
+      localStorage.setItem('auth_token', response.access_token)
+      await fetchUserProfile()
+    }
+  }  
+
   async function fetchUserProfile() {
     try {
       const userData = await api('/me')
@@ -49,5 +62,5 @@ export const useAuthStore = defineStore('auth', () => {
     localStorage.removeItem('auth_token')
   }
 
-  return { token, user, isAuthenticated, login, logout, fetchUserProfile }
+  return { token, user, isAuthenticated, login, register, logout, fetchUserProfile }
 })

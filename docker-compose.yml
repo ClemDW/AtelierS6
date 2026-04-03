@@ -206,7 +206,7 @@ services:
       - photopro.net
     volumes:
       - ./sql/db_user.schema.sql:/docker-entrypoint-initdb.d/01-db_user.schema.sql
-      - ./sql/seed_users.sql:/docker-entrypoint-initdb.d/02-seed_users.sql
+      - ./sql/db_user.data.sql:/docker-entrypoint-initdb.d/02-db_user.data.sql
 
   adminer:
     image: adminer
