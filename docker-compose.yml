@@ -56,13 +56,13 @@ services:
       - "${GALERIE_SERVICE_PORT:-6082}:80"
     volumes:
       - ./app-galerie:/var/php
-      - ./env:/var/env
     working_dir: /var/php
     networks:
       - photopro.net
     depends_on:
       - galerie.db
-    command: "sh -lc '[ -d vendor ] || composer install --no-interaction --prefer-dist; php -S 0.0.0.0:80 -t /var/php/public'"
+    env_file: ./env/galeriedb.env
+    command: "php -S 0.0.0.0:80 -t /var/php/public"
 
   service-storage.photopro:
     build:

@@ -9,6 +9,7 @@ interface GalerieRepositoryInterface
 {
     public function getGaleriesPublic(): array;
     public function getGaleriesParPhotographe(string $photographeId): array;
+    public function getGalerieByCodeAcces(string $code): ?Galerie;
     public function ajouterPhotoGalerie(string $galerieId, string $photoId): void;
     public function supprimerPhotoGalerie(string $galerieId, string $photoId): bool;
     public function publierGalerie(string $galerieId): void;

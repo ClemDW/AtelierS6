@@ -8,6 +8,7 @@ use photopro\core\application\usecases\ServiceGalerie;
 use photopro\infra\GalerieRepository;
 use photopro\api\actions\ListeGalerieAction;
 use photopro\api\actions\AfficherGalerieAction;
+use photopro\api\actions\AfficherGalerieCodeAction;
 use photopro\api\actions\CreerGalerieAction;
 use photopro\api\actions\ModifierPublicationGalerieAction;
 use photopro\api\actions\AjouterPhotoAction;
@@ -90,5 +91,8 @@ return [
 
     ModifierMiseEnPageAction::class => function (ContainerInterface $c): ModifierMiseEnPageAction {
         return new ModifierMiseEnPageAction($c->get(ServiceGalerieInterface::class));
+    },
+    AfficherGalerieCodeAction::class => function (ContainerInterface $c): AfficherGalerieCodeAction {
+        return new AfficherGalerieCodeAction($c->get(ServiceGalerieInterface::class));
     },
 ];

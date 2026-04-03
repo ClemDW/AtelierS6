@@ -13,6 +13,8 @@ interface ServiceGalerieInterface
     public function getGaleriesParPhotographe(string $photographeId): array;
     /** @throws GalerieNotFoundException */
     public function getGalerieAffiche(string $id): GalerieAfficheDTO;
+    /** @throws GalerieNotFoundException */
+    public function getGalerieByCodeAcces(string $code): GalerieAfficheDTO;
     public function creerGalerie(CreerGalerieDTO $dto): GalerieAfficheDTO;
     public function ajouterPhoto(string $galerieId, string $photoId): void;
     public function supprimerPhoto(string $galerieId, string $photoId): void;

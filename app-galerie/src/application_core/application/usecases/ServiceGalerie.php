@@ -63,6 +63,29 @@ class ServiceGalerie implements ServiceGalerieInterface
         return $galeries;
     }
 
+    public function getGalerieByCodeAcces(string $codeAcces): GalerieAfficheDTO
+    {
+        $galerie = $this->galerieRepository->getGalerieByCodeAcces($codeAcces);
+        if ($galerie === null) {
+            throw new GalerieNotFoundException("Code d'accès : " . $codeAcces);
+        }
+        return new GalerieAfficheDTO(
+            $galerie->getId(),
+            $galerie->getPhotographeId(),
+            $galerie->isPublic() ? 'public' : 'privée',
+            $galerie->getTitre(),
+            $galerie->getDescription(),
+            $galerie->getDateCreation(),
+            $galerie->getDatePublication(),
+            $galerie->isPublic(),
+            $galerie->getMiseEnPage(),
+            $galerie->getCodeAcces(),
+            $galerie->getUrl(),
+            $galerie->getPhotos(),
+            $galerie->getEmailsClients()
+        );
+    }
+
     public function getGalerieAffiche(string $id): GalerieAfficheDTO
     {
         $galerie = $this->getGalerieOuException($id);
