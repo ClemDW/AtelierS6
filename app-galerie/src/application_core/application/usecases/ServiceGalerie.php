@@ -145,7 +145,7 @@ class ServiceGalerie implements ServiceGalerieInterface
         $dateCreation = (new \DateTime())->format('Y-m-d H:i:s');
         $datePublication = $dto->estPubliee ? $dateCreation : '';
         $codeAcces = $dto->typeGalerie !== 'public' ? bin2hex(random_bytes(4)) : '';
-        $url = $dto->typeGalerie === 'public' ? '/galeries/' . $id : '';
+        $url = $dto->typeGalerie !== 'public' ? '/galeries/' . $id : '';
 
         $galerie = new Galerie(
             $id,
