@@ -8,6 +8,7 @@ use photopro\core\application\usecases\ServiceGalerie;
 use photopro\infra\GalerieRepository;
 use photopro\api\actions\ListeGalerieAction;
 use photopro\api\actions\AfficherGalerieAction;
+use photopro\api\actions\AfficherGalerieCodeAction;
 use photopro\api\actions\CreerGalerieAction;
 use photopro\api\actions\ModifierPublicationGalerieAction;
 use photopro\api\actions\AjouterPhotoAction;
@@ -27,11 +28,11 @@ return [
     // Base de données
     // ==============================
     PDO::class => function (): PDO {
-        $host     = $_ENV['DB_HOST'] ?? 'galerie.db';
-        $port     = $_ENV['DB_PORT'] ?? '5432';
-        $dbname   = $_ENV['DB_NAME'] ?? 'galeriedb';
-        $user     = $_ENV['DB_USER'] ?? 'admin';
-        $password = $_ENV['DB_PASS'] ?? 'admin';
+        $host     = $_ENV['POSTGRES_HOST']     ?? 'galerie.db';
+        $port     = $_ENV['POSTGRES_PORT']     ?? '5432';
+        $dbname   = $_ENV['POSTGRES_DB']       ?? 'galeriedb';
+        $user     = $_ENV['POSTGRES_USER']     ?? 'admin';
+        $password = $_ENV['POSTGRES_PASSWORD'] ?? 'admin';
         $dsn = "pgsql:host={$host};port={$port};dbname={$dbname}";
         return new PDO($dsn, $user, $password, [
             PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
@@ -90,5 +91,8 @@ return [
 
     ModifierMiseEnPageAction::class => function (ContainerInterface $c): ModifierMiseEnPageAction {
         return new ModifierMiseEnPageAction($c->get(ServiceGalerieInterface::class));
+    },
+    AfficherGalerieCodeAction::class => function (ContainerInterface $c): AfficherGalerieCodeAction {
+        return new AfficherGalerieCodeAction($c->get(ServiceGalerieInterface::class));
     },
 ];

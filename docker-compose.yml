@@ -57,6 +57,7 @@ services:
       - photopro.net
     depends_on:
       - galerie.db
+    env_file: ./env/galeriedb.env
     command: "php -S 0.0.0.0:80 -t /var/php/public"
 
   service-storage.photopro:
@@ -163,7 +164,7 @@ services:
         condition: service_healthy
       galerie.db:
         condition: service_started
-    env_file: ./galeriedb.env
+    env_file: ./env/galeriedb.env
     command: "php /var/www/bin/consumer.php"
 
   # service photoproprat.db : base de données postgresql pour les praticiens
