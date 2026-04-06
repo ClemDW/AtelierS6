@@ -11,7 +11,7 @@ export const useAuthStore = defineStore('auth', () => {
 
   // --- LE CLIENT API ---
   const api = ofetch.create({
-    baseURL: 'http://localhost:6081/api/back',
+    baseURL: import.meta.env.VITE_API_BACK_URL || 'http://localhost:6081/api/back',
     async onRequest({ options }) {
       const headers = new Headers(options.headers);
 

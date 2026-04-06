@@ -1,4 +1,11 @@
 import { fileURLToPath, URL } from 'node:url'
+import fs from 'node:fs'
+
+// Charger manuellement les variables depuis front.env
+const envPath = fileURLToPath(new URL('../env/front.env', import.meta.url));
+if (fs.existsSync(envPath)) {
+  process.loadEnvFile(envPath);
+}
 
 import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
