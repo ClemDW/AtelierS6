@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 declare(strict_types=1);
 
 use Slim\App;
@@ -7,7 +7,7 @@ use photopro\gateway\api\action\GetGaleriesAction;
 use photopro\gateway\api\action\GetGalerieByIdAction;
 
 return function (App $app) {
-    // Appliquer le middleware CORS globalement
+    // Appliquer le middleware CORS 
     $app->add(Cors::class);
     
     // Routes publiques du Gateway Front

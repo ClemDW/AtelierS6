@@ -11,7 +11,6 @@ return [
 
     Cors::class => fn() => new Cors(),
 
-    // Client spécifique pour le microservice Galerie
     'client.galerie' => function (ContainerInterface $c) {
         $settings = $c->get('settings');
         return new Client([
