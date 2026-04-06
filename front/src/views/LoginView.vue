@@ -75,7 +75,7 @@ const handleLogin = async () => {
       
       <div class="card-footer guest-footer">
         <span class="divider">ou</span>
-        <RouterLink :to="{ name: 'public-galeries' }" class="guest-btn">Continuer en tant qu'invité</RouterLink>
+        <RouterLink :to="{ name: 'galeries' }" class="guest-btn">Continuer en tant qu'invité</RouterLink>
       </div>
     </div>
   </div>

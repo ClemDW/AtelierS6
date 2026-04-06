@@ -58,7 +58,7 @@ onMounted(() => {
             <p class="date">{{ new Date(galerie.dateCreation).toLocaleDateString('fr-FR') }}</p>
             <p class="description">{{ galerie.description }}</p>
             <div class="actions">
-              <a :href="galerie.url" target="_blank" class="view-btn">Voir la galerie</a>
+              <RouterLink :to="{ name: 'galerie-detail', params: { id: galerie.id } }" class="view-btn">Voir la galerie</RouterLink>
             </div>
           </div>
         </div>

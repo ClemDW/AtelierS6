@@ -22,9 +22,14 @@ const router = createRouter({
       component: () => import('../views/RegisterView.vue')
     },
     {
-      path: '/public',
+      path: '/galeries',
       name: 'galeries',
       component: () => import('../views/GaleriesView.vue')
+    },
+    {
+      path: '/galeries/:id',
+      name: 'galerie-detail',
+      component: () => import('../views/GalerieDetailView.vue')
     }
   ],
 })
