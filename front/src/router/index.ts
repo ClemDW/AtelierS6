@@ -23,8 +23,8 @@ const router = createRouter({
     },
     {
       path: '/public',
-      name: 'public-galeries',
-      component: () => import('../views/PublicGaleriesView.vue')
+      name: 'galeries',
+      component: () => import('../views/GaleriesView.vue')
     }
   ],
 })

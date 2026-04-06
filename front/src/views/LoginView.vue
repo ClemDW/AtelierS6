@@ -18,7 +18,7 @@ const handleLogin = async () => {
     await authStore.login(email.value, password.value)
     router.push({ name: 'home' })
   } catch (error) {
-    errorMessage.value = 'Failed to connect. Please check your credentials.'
+    errorMessage.value = 'Échec de connexion. Veuillez vérifier vos identifiants.'
   } finally {
     isLoading.value = false
   }
@@ -34,7 +34,7 @@ const handleLogin = async () => {
     <div class="login-card">
       <div class="card-header">
         <h1>Photo<span class="highlight">Pro</span></h1>
-        <p>Your creative universe awaits.</p>
+        <p>Votre univers créatif vous attend.</p>
       </div>
 
       <form @submit.prevent="handleLogin" class="form-container">
@@ -44,14 +44,14 @@ const handleLogin = async () => {
             type="email" 
             id="email" 
             v-model="email" 
-            placeholder="photographer@studio.com" 
+            placeholder="photographe@studio.com" 
             required 
             :disabled="isLoading"
           />
         </div>
         
         <div class="input-group">
-          <label for="password">Password</label>
+          <label for="password">Mot de passe</label>
           <input 
             type="password" 
             id="password" 
@@ -65,12 +65,17 @@ const handleLogin = async () => {
         <p v-if="errorMessage" class="error-text">{{ errorMessage }}</p>
 
         <button type="submit" class="submit-btn" :disabled="isLoading">
-          {{ isLoading ? 'Connecting...' : 'Login' }}
+          {{ isLoading ? 'Connexion en cours...' : 'Se connecter' }}
         </button>
       </form>
       
       <div class="card-footer">
-        New here? <RouterLink :to="{ name: 'register' }" class="link">Create an account</RouterLink>
+        Nouveau ici ? <RouterLink :to="{ name: 'register' }" class="link">Créer un compte</RouterLink>
+      </div>
+      
+      <div class="card-footer guest-footer">
+        <span class="divider">ou</span>
+        <RouterLink :to="{ name: 'public-galeries' }" class="guest-btn">Continuer en tant qu'invité</RouterLink>
       </div>
     </div>
   </div>
@@ -249,5 +254,57 @@ const handleLogin = async () => {
 .link:hover {
   color: #60a5fa;
   text-decoration: underline;
+}
+
+.guest-footer {
+  margin-top: 1rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.8rem;
+}
+
+.divider {
+  color: #6b7280;
+  font-size: 0.85rem;
+  position: relative;
+  width: 100%;
+  text-align: center;
+}
+
+.divider::before, .divider::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  width: 40%;
+  height: 1px;
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.divider::before {
+  left: 0;
+}
+
+.divider::after {
+  right: 0;
+}
+
+.guest-btn {
+  color: #9ca3af;
+  text-decoration: none;
+  font-size: 0.9rem;
+  padding: 0.6rem 1.2rem;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background-color: transparent;
+  transition: all 0.3s ease;
+  width: 100%;
+  text-align: center;
+}
+
+.guest-btn:hover {
+  background-color: rgba(255, 255, 255, 0.05);
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.2);
 }
 </style>
