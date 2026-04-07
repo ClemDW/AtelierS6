@@ -41,6 +41,8 @@ class ServiceGalerie implements ServiceGalerieInterface
                 $galerie->getTitre(),
                 $galerie->getDescription(),
                 $galerie->getDateCreation(),
+                $galerie->getType(),
+                $galerie->isPublic(),
                 $galerie->getUrl()
             );
         }
@@ -57,6 +59,8 @@ class ServiceGalerie implements ServiceGalerieInterface
                 $galerie->getTitre(),
                 $galerie->getDescription(),
                 $galerie->getDateCreation(),
+                $galerie->getType(),
+                $galerie->isPublic(),
                 $galerie->getUrl()
             );
         }

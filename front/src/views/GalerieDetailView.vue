@@ -1,19 +1,27 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
+import { useAuthStore } from '../stores/auth'
 import { useGalerieStore } from '../stores/galerie'
 
 const route = useRoute()
+const authStore = useAuthStore()
 const galerieStore = useGalerieStore()
 
 const isLoading = ref(true)
 const errorMessage = ref('')
 
+// --- Upload & Drag state ---
+const isUploading = ref(false)
+const isDragging = ref(false)
+const uploadProgress = ref(0)
+const uploadTotal = ref(0)
+const uploadSuccessCount = ref(0)
+
 const fetchGalerieContent = async () => {
   isLoading.value = true
   errorMessage.value = ''
   try {
-
     const galerieId = route.params.id as string
     if (galerieId) {
       await galerieStore.loadGalerieById(galerieId)
@@ -22,6 +30,55 @@ const fetchGalerieContent = async () => {
     errorMessage.value = 'Impossible de charger le détail de cette galerie.'
   } finally {
     isLoading.value = false
+  }
+}
+
+const handleDrop = (e: DragEvent) => {
+  isDragging.value = false
+  const files = e.dataTransfer?.files
+  if (files && files.length > 0) {
+    processFiles(Array.from(files))
+  }
+}
+
+const onFileSelect = (e: Event) => {
+  const input = e.target as HTMLInputElement
+  if (input.files && input.files.length > 0) {
+    processFiles(Array.from(input.files))
+  }
+}
+
+const processFiles = async (files: File[]) => {
+  const userId = authStore.user?.id
+  const galerieId = galerieStore.currentGalerie?.id
+
+  if (!userId || !galerieId) return
+
+  isUploading.value = true
+  uploadTotal.value = files.length
+  uploadProgress.value = 0
+  uploadSuccessCount.value = 0
+
+  try {
+    for (const file of files) {
+      console.log(`Début upload pour: ${file.name}`);
+      const result = await galerieStore.uploadPhoto(userId, file)
+      console.log('Résultat upload:', result);
+      
+      const photoId = result.photo_id || result.photoId;
+      if (!photoId) throw new Error('ID manquant');
+
+      await galerieStore.ajouterPhotoToGalerie(galerieId, photoId)
+      
+      uploadSuccessCount.value++
+      uploadProgress.value = Math.round((uploadSuccessCount.value / uploadTotal.value) * 100)
+    }
+    await fetchGalerieContent()
+  } catch (error) {
+    console.error('Upload error:', error)
+    alert('Erreur lors de l\'ajout des photos.')
+  } finally {
+    isUploading.value = false
   }
 }
 
@@ -54,23 +111,66 @@ onMounted(() => {
         <!-- En-tête de la galerie -->
         <div class="galerie-header">
           <h1>{{ galerieStore.currentGalerie.titre }}</h1>
-          <p class="date">Créée le {{ new Date(galerieStore.currentGalerie.dateCreation).toLocaleDateString('fr-FR') }}</p>
+          <p class="date">Créée le {{ galerieStore.currentGalerie.date_creation ? new Date(galerieStore.currentGalerie.date_creation).toLocaleDateString('fr-FR') : 'Date inconnue' }}</p>
           <p v-if="galerieStore.currentGalerie.description" class="description-longue">
             {{ galerieStore.currentGalerie.description }}
           </p>
+
+          <!-- Zone de dépot / Upload -->
+          <div v-if="authStore.user" class="upload-area-container">
+            <div 
+              class="dropzone-zone" 
+              :class="{ 'is-dragging': isDragging, 'is-uploading': isUploading }"
+              @dragover.prevent="isDragging = true"
+              @dragleave.prevent="isDragging = false"
+              @drop.prevent="handleDrop"
+              @click="($refs.fileInput as HTMLInputElement)?.click()"
+            >
+              <div class="dropzone-content">
+                <div class="dropzone-icon">
+                  <svg v-if="!isUploading" xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+                  <div v-else class="spinner-blue"></div>
+                </div>
+                <div class="dropzone-text">
+                  <template v-if="isUploading">
+                    <strong>Envoi en cours...</strong>
+                    <span>{{ uploadSuccessCount }} / {{ uploadTotal }} fichiers traités</span>
+                  </template>
+                  <template v-else>
+                    <strong>Ajouter des photos</strong>
+                    <span>Faites glisser vos images ou cliquez ici</span>
+                  </template>
+                </div>
+              </div>
+              
+              <!-- Progress bar discrète en bas de la zone -->
+              <div v-if="isUploading" class="dropzone-progress">
+                <div class="progress-bar-fill" :style="{ width: uploadProgress + '%' }"></div>
+              </div>
+            </div>
+            
+            <input 
+              ref="fileInput" 
+              type="file" 
+              multiple 
+              accept="image/*" 
+              @change="onFileSelect" 
+              class="hidden-input"
+            />
+          </div>
         </div>
 
-        <!-- Section des photos (Grid proportionnelle) -->
+        <!-- Section des photos -->
         <div class="photos-container">
           <div v-if="!galerieStore.currentGalerie.photos || galerieStore.currentGalerie.photos.length === 0" class="no-photos">
+            <div class="empty-icon">📷</div>
             <p>Cette galerie ne contient pas encore de photos.</p>
           </div>
           
           <div v-else class="photos-grid">
-            <div v-for="(photo, index) in galerieStore.currentGalerie.photos" :key="photo.id || index" class="photo-item">
-              <!-- placeholder style si l'api ne renvoie pas de vraies images encore -->
-              <img :src="photo.url ? photo.url : 'https://via.placeholder.com/800x600?text=Photo+' + (index + 1)" :alt="photo.titre || 'Photo de la galerie'" loading="lazy" />
-              <div v-if="photo.titre" class="photo-caption">{{ photo.titre }}</div>
+            <div v-for="(photo, index) in galerieStore.currentGalerie.photos" :key="(photo as any).id || index" class="photo-item">
+              <img :src="(photo as any).url ? (photo as any).url : 'https://via.placeholder.com/800x600?text=Photo+' + (index + 1)" :alt="(photo as any).titre || 'Photo de la galerie'" loading="lazy" />
+              <div v-if="(photo as any).titre" class="photo-caption">{{ (photo as any).titre }}</div>
             </div>
           </div>
         </div>
@@ -171,15 +271,125 @@ onMounted(() => {
 .galerie-header {
   text-align: center;
   margin-bottom: 4rem;
-  max-width: 800px;
+  max-width: 1000px;
   margin-left: auto;
   margin-right: auto;
 }
 
+.header-main {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 2rem;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+}
+
 .galerie-header h1 {
   font-size: 3rem;
-  margin-bottom: 0.5rem;
+  margin: 0;
   line-height: 1.2;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+}
+
+.upload-area-container {
+  margin: 1.5rem auto 3rem;
+  max-width: 800px;
+}
+
+.dropzone-zone {
+  position: relative;
+  border: 2px dashed rgba(255, 255, 255, 0.15);
+  border-radius: 16px;
+  padding: 2.5rem;
+  background: rgba(255, 255, 255, 0.03);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: pointer;
+  overflow: hidden;
+}
+
+.dropzone-zone:hover {
+  border-color: rgba(59, 130, 246, 0.5);
+  background: rgba(59, 130, 246, 0.05);
+}
+
+.dropzone-zone.is-dragging {
+  border-color: #3b82f6;
+  background: rgba(59, 130, 246, 0.1);
+  transform: scale(1.02);
+}
+
+.dropzone-zone.is-uploading {
+  pointer-events: none;
+  border-style: solid;
+}
+
+.dropzone-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.25rem;
+  text-align: center;
+}
+
+.dropzone-icon {
+  width: 64px;
+  height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 50%;
+  color: #3b82f6;
+  transition: all 0.3s;
+}
+
+.dropzone-zone:hover .dropzone-icon {
+  background: #3b82f6;
+  color: white;
+  transform: translateY(-5px);
+}
+
+.dropzone-text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.dropzone-text strong {
+  font-size: 1.25rem;
+  color: #fff;
+}
+
+.dropzone-text span {
+  color: #9ca3af;
+  font-size: 0.95rem;
+}
+
+.dropzone-progress {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.spinner-blue {
+  width: 32px;
+  height: 32px;
+  border: 3px solid rgba(59, 130, 246, 0.2);
+  border-top-color: #3b82f6;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+.hidden-input {
+  display: none;
 }
 
 .date {
@@ -194,6 +404,38 @@ onMounted(() => {
   color: #d1d5db;
   font-size: 1.15rem;
   line-height: 1.7;
+  margin-bottom: 2rem;
+}
+
+/* UPLOAD PROGRESS */
+.upload-progress-container {
+  margin: 2rem auto 0;
+  max-width: 400px;
+  background: rgba(17, 24, 39, 0.6);
+  padding: 1.25rem;
+  border-radius: 12px;
+  border: 1px solid rgba(59, 130, 246, 0.2);
+  animation: fadeIn 0.3s ease;
+}
+
+.progress-info {
+  font-size: 0.9rem;
+  color: #93c5fd;
+  margin-bottom: 0.75rem;
+  font-weight: 500;
+}
+
+.progress-bar-bg {
+  height: 6px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.progress-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #3b82f6, #60a5fa);
+  transition: width 0.3s ease;
 }
 
 /* SECTION PHOTOS */
@@ -203,34 +445,51 @@ onMounted(() => {
 
 .no-photos {
   text-align: center;
-  padding: 4rem;
+  padding: 5rem 2rem;
   background: rgba(255, 255, 255, 0.02);
-  border-radius: 12px;
+  border-radius: 20px;
+  border: 1px dashed rgba(255, 255, 255, 0.1);
   color: #9ca3af;
-  font-style: italic;
+}
+
+.empty-add-btn {
+  margin-top: 1.5rem;
+  padding: 0.8rem 2rem;
+  background: transparent;
+  color: #3b82f6;
+  border: 2px solid #3b82f6;
+  border-radius: 50px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.empty-add-btn:hover {
+  background: rgba(59, 130, 246, 0.1);
+  transform: translateY(-2px);
 }
 
 /* Grille de maçonnerie simulée très simple */
 .photos-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  grid-gap: 1.5rem;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  grid-gap: 2rem;
   align-items: start;
 }
 
 .photo-item {
   position: relative;
-  border-radius: 8px;
+  border-radius: 12px;
   overflow: hidden;
   background: #111827;
-  transition: transform 0.3s ease;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
 }
 
 .photo-item:hover {
-  transform: scale(1.02);
+  transform: translateY(-8px) scale(1.01);
   z-index: 10;
-  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
 }
 
 .photo-item img {
@@ -245,15 +504,22 @@ onMounted(() => {
   bottom: 0;
   left: 0;
   right: 0;
-  background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);
+  background: linear-gradient(to top, rgba(0,0,0,0.9), transparent);
   color: white;
-  padding: 1.5rem 1rem 1rem;
-  font-size: 0.9rem;
+  padding: 2rem 1rem 1rem;
+  font-size: 0.95rem;
   opacity: 0;
-  transition: opacity 0.3s;
+  transform: translateY(10px);
+  transition: all 0.3s;
 }
 
 .photo-item:hover .photo-caption {
   opacity: 1;
+  transform: translateY(0);
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 </style>

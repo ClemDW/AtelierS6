@@ -25,22 +25,31 @@ export const useGalerieStore = defineStore('galerie', () => {
   // --- LE CLIENT API (Gateway Front) ---
   const api = ofetch.create({
     baseURL: import.meta.env.VITE_API_FRONT_URL || 'http://localhost:6080',
-    async onRequest({ options }) {
-      const headers = new Headers(options.headers);
-      options.headers = headers;
+    onRequest({ options }) {
+      const token = localStorage.getItem('auth_token');
+      if (token) {
+        options.headers = {
+          ...options.headers,
+          Authorization: `Bearer ${token}`
+        };
+      }
     }
   })
 
   // --- LE CLIENT API AUTHENTIFIÉ (Gateway Back) ---
   const authApi = ofetch.create({
     baseURL: import.meta.env.VITE_API_BACK_URL || 'http://localhost:6081/api/back',
-    async onRequest({ options }) {
-      const headers = new Headers(options.headers);
+    onRequest({ options }) {
       const token = localStorage.getItem('auth_token');
       if (token) {
-        headers.set('Authorization', `Bearer ${token}`);
+        options.headers = {
+          ...options.headers,
+          Authorization: `Bearer ${token}`
+        };
+        console.log('Sending token to CUSTOM back gateway:', token.substring(0, 10) + '...');
+      } else {
+        console.warn('No authentication token found in localStorage');
       }
-      options.headers = headers;
     }
   })
 
@@ -52,7 +61,7 @@ export const useGalerieStore = defineStore('galerie', () => {
       return response
     } catch (error) {
       console.error('Erreur ofetch : Impossible de récupérer les galeries', error)
-      throw error 
+      throw error
     }
   }
 
@@ -60,7 +69,7 @@ export const useGalerieStore = defineStore('galerie', () => {
     try {
       // Nettoyage avant chargement (éviter d'afficher une ancienne galerie)
       currentGalerie.value = null
-      
+
       const response = await api(`/galeries/${id}`, { method: 'GET' })
       currentGalerie.value = response
       return response
@@ -132,6 +141,16 @@ export const useGalerieStore = defineStore('galerie', () => {
     }
   }
 
+  async function loadUserGaleries(userId: string) {
+    try {
+      const response = await authApi(`/photographes/${userId}/galeries`, { method: 'GET' })
+      return response
+    } catch (error) {
+      console.error('Erreur : Impossible de récupérer vos galeries', error)
+      throw error
+    }
+  }
+
   return {
     galeriesPubliques,
     currentGalerie,
@@ -141,6 +160,7 @@ export const useGalerieStore = defineStore('galerie', () => {
     loadGalerieById,
     createGalerie,
     uploadPhoto,
-    ajouterPhotoToGalerie
+    ajouterPhotoToGalerie,
+    loadUserGaleries
   }
 })

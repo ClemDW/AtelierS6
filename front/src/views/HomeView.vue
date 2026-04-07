@@ -30,14 +30,19 @@ const handleLogout = () => {
     
     <main class="dashboard-content">
       <header class="page-header">
-        <div>
+        <div class="header-info">
           <h2>Welcome to your studio</h2>
           <p>Manage your photos, galleries, and clients all from one place.</p>
         </div>
-        <RouterLink :to="{ name: 'create-galerie' }" class="create-btn">
-          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-          Nouvelle galerie
-        </RouterLink>
+        <div class="header-actions">
+          <RouterLink :to="{ name: 'my-galeries' }" class="secondary-btn">
+            Mes Galeries
+          </RouterLink>
+          <RouterLink :to="{ name: 'create-galerie' }" class="create-btn">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+            Nouvelle galerie
+          </RouterLink>
+        </div>
       </header>
       
       <section class="stats-grid">
@@ -183,19 +188,31 @@ const handleLogout = () => {
   margin: 0;
 }
 
-.create-btn {
+.header-actions {
+  display: flex;
+  gap: 1rem;
+}
+
+.secondary-btn {
   display: flex;
   align-items: center;
   gap: 0.5rem;
   padding: 0.75rem 1.5rem;
   border-radius: 12px;
-  background: linear-gradient(135deg, #3b82f6, #2563eb);
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   color: #ffffff;
   text-decoration: none;
   font-size: 0.95rem;
   font-weight: 600;
   transition: all 0.2s;
   white-space: nowrap;
+}
+
+.secondary-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.2);
+  transform: translateY(-2px);
 }
 
 .create-btn:hover {

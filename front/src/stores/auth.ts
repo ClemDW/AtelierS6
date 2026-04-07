@@ -47,13 +47,22 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   async function fetchUserProfile() {
+    console.log('--- fetchUserProfile START ---')
     try {
       const userData = await api('/me')
+      console.log('Profil chargé:', userData)
       user.value = userData
     } catch (error) {
-      console.error("Erreur profil:", error)
+      console.error("Erreur chargement profil:", error)
       logout()
+    } finally {
+      console.log('--- fetchUserProfile END ---')
     }
+  }
+
+  // Initialisation du store au chargement (si un token existe)
+  if (token.value) {
+    fetchUserProfile()
   }
 
   function logout() {

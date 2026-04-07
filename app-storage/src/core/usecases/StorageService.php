@@ -110,7 +110,7 @@ class StorageService
             $extension = $this->mimeToExtension($dto->mimeType);
             $key = sprintf('users/%s/%s.%s', $dto->ownerId, $photoId, $extension);
             
-            // Stockage dans S3 avec métadonnées
+            // 1. Stockage dans S3 avec métadonnées
             $this->s3_internal_client->putObject([
                 'Bucket' => $this->bucket,
                 'Key' => $key,
@@ -122,13 +122,32 @@ class StorageService
                     'photo_id' => $photoId,
                 ]
             ]);
+
+            // 2. Enregistrement en Base de données (PDO PostgreSQL)
+            // On insère ici pour éviter que l'association galerie_photo n'échoue (FK constraint)
+            $stmt = $this->db->prepare("
+                INSERT INTO photo (id, owner_id, mime_type, taille_mo, nom_original, cle_s3, titre) 
+                VALUES (:id, :owner_id, :mime_type, :taille_mo, :nom_original, :cle_s3, :titre)
+            ");
             
-            // Génération de l'URL pré-signée pour accès direct
+            $stmt->execute([
+                ':id' => $photoId,
+                ':owner_id' => $dto->ownerId,
+                ':mime_type' => $dto->mimeType,
+                ':taille_mo' => $dto->tailleMo,
+                ':nom_original' => $dto->nomOriginal,
+                ':cle_s3' => $key,
+                ':titre' => $dto->titre
+            ]);
+            
+            // 3. Génération de l'URL pré-signée
             $url = $this->getPresignedUrl($key);
             
             return new OutputPhotoDTO($photoId, $key, $url);
         } catch (\Aws\S3\Exception\S3Exception $e) {
             throw new StorageServiceException('Erreur S3 lors du stockage : ' . $e->getMessage(), 0, $e);
+        } catch (\PDOException $e) {
+            throw new StorageServiceException('Erreur BDD lors de l\'enregistrement : ' . $e->getMessage(), 0, $e);
         }
     }
 
