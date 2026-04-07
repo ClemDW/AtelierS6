@@ -18,8 +18,8 @@ $rabbitPort = getenv('RABBITMQ_PORT');
 $rabbitUser = getenv('RABBITMQ_USER');
 $rabbitPass = getenv('RABBITMQ_PASS');
 $exchangeName = 'photopro.events';
-$queueName = 'rdv_notifications';
-$routingKey = 'rdv.*';
+$queueName = 'mail_notifications';
+$routingKey = 'photopro.*';
 
 // Configuration Mail 
 $mailHost = getenv('MAIL_HOST');

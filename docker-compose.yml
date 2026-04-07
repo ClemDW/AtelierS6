@@ -163,7 +163,7 @@ services:
       mail.photopro:
         condition: service_started
     env_file: ./env/mail-consumer.env
-    command: "php /var/www/bin/consumer.php"
+    command: "sh -lc 'composer install --no-interaction --prefer-dist; composer require php-amqplib/php-amqplib:^3.7 --no-interaction --prefer-dist; php /var/www/bin/consumer.php'"
 
   ##############################################
   ### Service Galerie Consumer (RabbitMQ)
