@@ -15,6 +15,7 @@ use photopro\api\actions\AjouterPhotoAction;
 use photopro\api\actions\RetirerPhotoAction;
 use photopro\api\actions\ListeGalerieParPhotographeAction;
 use photopro\api\actions\ModifierMiseEnPageAction;
+use photopro\api\actions\SupprimerGalerieAction;
 
 return [
 
@@ -94,5 +95,8 @@ return [
     },
     AfficherGalerieCodeAction::class => function (ContainerInterface $c): AfficherGalerieCodeAction {
         return new AfficherGalerieCodeAction($c->get(ServiceGalerieInterface::class));
+    },
+    SupprimerGalerieAction::class => function (ContainerInterface $c): SupprimerGalerieAction {
+        return new SupprimerGalerieAction($c->get(ServiceGalerieInterface::class));
     },
 ];

@@ -151,16 +151,24 @@ export const useGalerieStore = defineStore('galerie', () => {
     }
   }
 
+  async function supprimerGalerie(id: string) {
+    try {
+      await authApi(`/galeries/${id}`, { method: 'DELETE' })
+    } catch (error) {
+      console.error('Erreur : Impossible de supprimer la galerie', error)
+      throw error
+    }
+  }
+
   return {
     galeriesPubliques,
     currentGalerie,
-    api,
-    authApi,
     loadPublicGaleries,
+    loadUserGaleries,
     loadGalerieById,
     createGalerie,
     uploadPhoto,
     ajouterPhotoToGalerie,
-    loadUserGaleries
+    supprimerGalerie
   }
 })

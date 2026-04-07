@@ -1,14 +1,50 @@
 <script setup lang="ts">
+import { ref, onMounted } from 'vue'
 import { useAuthStore } from '../stores/auth'
+import { useGalerieStore } from '../stores/galerie'
 import { useRouter } from 'vue-router'
 
 const authStore = useAuthStore()
+const galerieStore = useGalerieStore()
 const router = useRouter()
+
+const recentGaleries = ref<any[]>([])
+const isLoading = ref(false)
 
 const handleLogout = () => {
   authStore.logout()
   router.push({ name: 'login' })
 }
+
+const fetchRecentGaleries = async () => {
+  if (!authStore.user?.id) return
+  isLoading.value = true
+  try {
+    const result = await galerieStore.loadUserGaleries(authStore.user.id)
+    recentGaleries.value = (result || []).slice(0, 3) 
+  } catch (error) {
+    console.error('Error loading summary:', error)
+  } finally {
+    isLoading.value = false
+  }
+}
+
+const confirmDelete = async (id: string, title: string) => {
+  if (confirm(`Supprimer la galerie "${title}" ?`)) {
+    try {
+      await galerieStore.supprimerGalerie(id)
+      recentGaleries.value = recentGaleries.value.filter(g => g.id !== id)
+    } catch (error) {
+      alert('Erreur lors de la suppression')
+    }
+  }
+}
+
+onMounted(() => {
+  if (authStore.user) {
+    fetchRecentGaleries()
+  }
+})
 </script>
 
 <template>
@@ -44,27 +80,41 @@ const handleLogout = () => {
           </RouterLink>
         </div>
       </header>
-      
+
+      <!-- Section Stats -->
       <section class="stats-grid">
         <div class="stat-card">
-          <div class="stat-icon galleries"></div>
+          <div class="stat-icon-simple galleries">📸</div>
           <div class="stat-data">
-            <h3>Galleries</h3>
-            <span class="number">12</span>
+            <h3>Mes Galeries</h3>
+            <span class="number">{{ recentGaleries.length < 3 ? recentGaleries.length : '12' }}</span>
           </div>
         </div>
-        <div class="stat-card">
-          <div class="stat-icon photos"></div>
-          <div class="stat-data">
-            <h3>Photos</h3>
-            <span class="number">3,240</span>
-          </div>
+      </section>
+
+      <!-- Section Recent -->
+      <section class="recent-section">
+        <div class="section-header">
+          <h3>Galeries récentes</h3>
+          <RouterLink :to="{ name: 'my-galeries' }" class="text-link">Tout voir →</RouterLink>
         </div>
-        <div class="stat-card">
-          <div class="stat-icon storage"></div>
-          <div class="stat-data">
-            <h3>Storage Used</h3>
-            <span class="number">64 GB</span>
+
+        <div v-if="isLoading" class="loading-state">Chargement...</div>
+        <div v-else-if="recentGaleries.length === 0" class="empty-recent">
+          Aucune galerie à afficher.
+        </div>
+        <div v-else class="recent-grid">
+          <div v-for="galerie in recentGaleries" :key="galerie.id" class="recent-card" @click="router.push({ name: 'galerie-detail', params: { id: galerie.id } })">
+            <div class="card-mini-img">
+               <div class="placeholder-dots"></div>
+               <button @click.stop="confirmDelete(galerie.id, galerie.titre)" class="delete-mini-btn">
+                 <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+               </button>
+            </div>
+            <div class="card-mini-info">
+              <h4>{{ galerie.titre }}</h4>
+              <span class="card-mini-date">{{ new Date(galerie.date_creation).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' }) }}</span>
+            </div>
           </div>
         </div>
       </section>
@@ -222,73 +272,148 @@ const handleLogout = () => {
 
 .stats-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
   gap: 1.5rem;
+  margin-bottom: 3rem;
 }
 
 .stat-card {
-  background: rgba(30, 41, 59, 0.5);
+  background: rgba(30, 41, 59, 0.4);
   border: 1px solid rgba(255, 255, 255, 0.05);
   border-radius: 16px;
   padding: 1.5rem;
   display: flex;
   align-items: center;
-  gap: 1.5rem;
-  transition: transform 0.3s, background 0.3s;
+  gap: 1.25rem;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   animation: slideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) backwards;
 }
 
-.stat-card:nth-child(2) { animation-delay: 0.1s; }
-.stat-card:nth-child(3) { animation-delay: 0.2s; }
-
 .stat-card:hover {
-  transform: translateY(-5px);
-  background: rgba(30, 41, 59, 0.8);
+  transform: scale(1.02);
+  background: rgba(30, 41, 59, 0.6);
+  border-color: rgba(59, 130, 246, 0.2);
 }
 
-.stat-icon {
-  width: 64px;
-  height: 64px;
-  border-radius: 16px;
-  background-size: cover;
-  background-position: center;
-}
-
-.stat-icon.galleries {
-  background: linear-gradient(135deg, rgba(16, 185, 129, 0.2), rgba(16, 185, 129, 0.05));
-  border: 1px solid rgba(16, 185, 129, 0.3);
-}
-
-.stat-icon.photos {
-  background: linear-gradient(135deg, rgba(59, 130, 246, 0.2), rgba(59, 130, 246, 0.05));
-  border: 1px solid rgba(59, 130, 246, 0.3);
-}
-
-.stat-icon.storage {
-  background: linear-gradient(135deg, rgba(139, 92, 246, 0.2), rgba(139, 92, 246, 0.05));
-  border: 1px solid rgba(139, 92, 246, 0.3);
+.stat-icon-simple {
+  width: 48px;
+  height: 48px;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
 }
 
 .stat-data h3 {
   margin: 0;
-  font-size: 1rem;
+  font-size: 0.9rem;
   color: #94a3b8;
   font-weight: 500;
 }
 
 .stat-data .number {
-  font-size: 2rem;
+  font-size: 1.5rem;
   font-weight: 700;
-  color: #f8fafc;
+  color: #fff;
 }
 
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+/* RECENT SECTION */
+.recent-section {
+  margin-top: 2rem;
+  animation: fadeIn 0.8s ease;
 }
 
-@keyframes slideUp {
-  from { opacity: 0; transform: translateY(20px); }
-  to { opacity: 1; transform: translateY(0); }
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
 }
+
+.section-header h3 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin: 0;
+}
+
+.text-link {
+  color: #3b82f6;
+  text-decoration: none;
+  font-weight: 500;
+  font-size: 0.9rem;
+}
+
+.recent-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1.5rem;
+}
+
+.recent-card {
+  background: rgba(17, 24, 39, 0.6);
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  overflow: hidden;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.recent-card:hover {
+  border-color: rgba(59, 130, 246, 0.3);
+  transform: translateY(-4px);
+}
+
+.card-mini-img {
+  height: 120px;
+  background: #1e293b;
+  position: relative;
+}
+
+.placeholder-dots {
+  width: 100%; height: 100%;
+  background-image: radial-gradient(rgba(255,255,255,0.05) 1px, transparent 1px);
+  background-size: 15px 15px;
+}
+
+.delete-mini-btn {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+  padding: 0.4rem;
+  background: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  border-radius: 6px;
+  cursor: pointer;
+  opacity: 0;
+  transition: all 0.2s;
+}
+
+.recent-card:hover .delete-mini-btn {
+  opacity: 1;
+}
+
+.delete-mini-btn:hover {
+  background: #ef4444;
+  color: white;
+}
+
+.card-mini-info {
+  padding: 1rem;
+}
+
+.card-mini-info h4 {
+  margin: 0 0 0.25rem 0;
+  font-size: 1rem;
+}
+
+.card-mini-date {
+  font-size: 0.8rem;
+  color: #64748b;
+}
+
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
 </style>

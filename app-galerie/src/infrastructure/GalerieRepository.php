@@ -250,4 +250,15 @@ class GalerieRepository implements GalerieRepositoryInterface
         $stmt = $this->pdo->prepare('UPDATE galerie SET mode_mise_en_page = :mode WHERE id = :id');
         $stmt->execute(['mode' => $miseEnPage, 'id' => $galerieId]);
     }
+
+    public function supprimerGalerie(string $id): void
+    {
+        // Suppression manuelle des dépendances car pas de ON DELETE CASCADE
+        $this->pdo->prepare('DELETE FROM invitation WHERE galerie_id = :id')->execute(['id' => $id]);
+        $this->pdo->prepare('DELETE FROM galerie_photo WHERE galerie_id = :id')->execute(['id' => $id]);
+        
+        // Suppression de la galerie
+        $stmt = $this->pdo->prepare('DELETE FROM galerie WHERE id = :id');
+        $stmt->execute(['id' => $id]);
+    }
 }

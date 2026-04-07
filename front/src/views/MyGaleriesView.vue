@@ -56,8 +56,24 @@ watch(() => authStore.user, (u) => {
   }
 }, { immediate: true })
 
+async function confirmDelete(id: string, title: string) {
+  if (confirm(`Êtes-vous sûr de vouloir supprimer la galerie "${title}" ? Cette action est irréversible.`)) {
+    try {
+      await galerieStore.supprimerGalerie(id)
+      // On rafraîchit la liste locale
+      myGaleries.value = myGaleries.value.filter(g => g.id !== id)
+    } catch (error) {
+      alert('Erreur lors de la suppression de la galerie.')
+    }
+  }
+}
+
+function handleLogout() {
+  authStore.logout()
+  router.push({ name: 'login' })
+}
+
 onMounted(() => {
-  // Petite sécurité si le store est déjà prêt
   if (authStore.user) {
     fetchMyGaleries()
   }
@@ -129,13 +145,16 @@ onMounted(() => {
               <span v-if="galerie.est_publiee" class="badge published">En ligne</span>
               <span v-else class="badge draft">Brouillon</span>
             </div>
+            <button @click.stop="confirmDelete(galerie.id, galerie.titre)" class="delete-btn-overlay" title="Supprimer la galerie">
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+            </button>
           </div>
           <div class="card-content">
             <h3>{{ galerie.titre }}</h3>
             <p class="description">{{ galerie.description || 'Aucune description' }}</p>
             <div class="card-footer">
               <span class="date">{{ galerie.date_creation ? new Date(galerie.date_creation).toLocaleDateString('fr-FR') : 'Date inconnue' }}</span>
-              <span class="photo-link">Voir →</span>
+              <span class="photo-link">Gérer →</span>
             </div>
           </div>
         </div>
@@ -387,6 +406,37 @@ onMounted(() => {
   font-size: 0.85rem;
   color: #3b82f6;
   font-weight: 600;
+}
+
+.delete-btn-overlay {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: rgba(239, 68, 68, 0.15);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  color: #ef4444;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  opacity: 0;
+  transform: translateY(-5px);
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.galerie-card:hover .delete-btn-overlay {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.delete-btn-overlay:hover {
+  background: #ef4444;
+  color: white;
+  transform: scale(1.1) !important;
 }
 
 @keyframes spin { to { transform: rotate(360deg); } }
