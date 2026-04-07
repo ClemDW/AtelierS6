@@ -58,6 +58,9 @@ class UploadAction
                 $title = null;
             }
         }
+        if ($title === null) {
+            $title = $clientFileName;
+        }
 
         // 2. Erreur d'upload PHP ?
         if ($upload->getError() !== UPLOAD_ERR_OK) {

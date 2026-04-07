@@ -1,97 +1,107 @@
-import { ref } from 'vue'
-import { defineStore } from 'pinia'
-import { ofetch } from 'ofetch'
+import { ref } from "vue";
+import { defineStore } from "pinia";
+import { ofetch } from "ofetch";
 
 export interface Photo {
-  id: string
-  url: string
-  titre?: string
+  id: string;
+  url: string;
+  titre?: string;
 }
 
 export interface Galerie {
-  id: string
-  titre: string
-  description: string
-  dateCreation: string
-  url: string
-  photos?: Photo[]
+  id: string;
+  titre: string;
+  description: string;
+  dateCreation: string;
+  url: string;
+  photos?: Photo[];
 }
 
-export const useGalerieStore = defineStore('galerie', () => {
+export const useGalerieStore = defineStore("galerie", () => {
+  const galeriesPubliques = ref<Galerie[]>([]);
+  const currentGalerie = ref<Galerie | null>(null);
 
-  const galeriesPubliques = ref<Galerie[]>([])
-  const currentGalerie = ref<Galerie | null>(null)
-
-  // --- LE CLIENT API (Gateway Front) ---
+  // --- LE CLIENT API (Gateway Back) ---
   const api = ofetch.create({
-    baseURL: import.meta.env.VITE_API_FRONT_URL || 'http://localhost:6080',
+    baseURL:
+      import.meta.env.VITE_API_BACK_URL || "http://localhost:6081/api/back",
     onRequest({ options }) {
-      const token = localStorage.getItem('auth_token');
+      const token = localStorage.getItem("auth_token");
       if (token) {
         options.headers = {
           ...options.headers,
-          Authorization: `Bearer ${token}`
+          Authorization: `Bearer ${token}`,
         };
       }
-    }
-  })
+    },
+  });
 
   // --- LE CLIENT API AUTHENTIFIÉ (Gateway Back) ---
   const authApi = ofetch.create({
-    baseURL: import.meta.env.VITE_API_BACK_URL || 'http://localhost:6081/api/back',
+    baseURL:
+      import.meta.env.VITE_API_BACK_URL || "http://localhost:6081/api/back",
     onRequest({ options }) {
-      const token = localStorage.getItem('auth_token');
+      const token = localStorage.getItem("auth_token");
       if (token) {
         options.headers = {
           ...options.headers,
-          Authorization: `Bearer ${token}`
+          Authorization: `Bearer ${token}`,
         };
-        console.log('Sending token to CUSTOM back gateway:', token.substring(0, 10) + '...');
+        console.log(
+          "Sending token to CUSTOM back gateway:",
+          token.substring(0, 10) + "...",
+        );
       } else {
-        console.warn('No authentication token found in localStorage');
+        console.warn("No authentication token found in localStorage");
       }
-    }
-  })
+    },
+  });
 
   // --- ACTIONS ---
   async function loadPublicGaleries() {
     try {
-      const response = await api('/galeries', { method: 'GET' })
-      galeriesPubliques.value = response
-      return response
+      const response = await api("/galeries", { method: "GET" });
+      galeriesPubliques.value = response;
+      return response;
     } catch (error) {
-      console.error('Erreur ofetch : Impossible de récupérer les galeries', error)
-      throw error
+      console.error(
+        "Erreur ofetch : Impossible de récupérer les galeries",
+        error,
+      );
+      throw error;
     }
   }
 
   async function loadGalerieById(id: string) {
     try {
       // Nettoyage avant chargement (éviter d'afficher une ancienne galerie)
-      currentGalerie.value = null
+      currentGalerie.value = null;
 
-      const response = await api(`/galeries/${id}`, { method: 'GET' })
-      currentGalerie.value = response
-      return response
+      const response = await api(`/galeries/${id}`, { method: "GET" });
+      currentGalerie.value = response;
+      return response;
     } catch (error) {
-      console.error('Erreur ofetch : Impossible de récupérer la galerie', error)
-      throw error
+      console.error(
+        "Erreur ofetch : Impossible de récupérer la galerie",
+        error,
+      );
+      throw error;
     }
   }
 
   async function createGalerie(data: {
-    photographeId: string
-    typeGalerie: string
-    titre: string
-    description: string
-    estPubliee: boolean
-    modeMiseEnPage: string
-    emailsClients?: string[]
-    photos?: string[]
+    photographeId: string;
+    typeGalerie: string;
+    titre: string;
+    description: string;
+    estPubliee: boolean;
+    modeMiseEnPage: string;
+    emailsClients?: string[];
+    photos?: string[];
   }) {
     try {
-      const response = await authApi('/galeries', {
-        method: 'POST',
+      const response = await authApi("/galeries", {
+        method: "POST",
         body: {
           photographeId: data.photographeId,
           typeGalerie: data.typeGalerie,
@@ -100,63 +110,83 @@ export const useGalerieStore = defineStore('galerie', () => {
           estPubliee: data.estPubliee,
           modeMiseEnPage: data.modeMiseEnPage,
           emailsClients: data.emailsClients || [],
-          photos: data.photos || []
-        }
-      })
-      return response
+          photos: data.photos || [],
+        },
+      });
+      return response;
     } catch (error) {
-      console.error('Erreur : Impossible de créer la galerie', error)
-      throw error
+      console.error("Erreur : Impossible de créer la galerie", error);
+      throw error;
     }
   }
 
   async function uploadPhoto(userId: string, file: File, titre?: string) {
     try {
-      const formData = new FormData()
-      formData.append('photo', file)
+      const formData = new FormData();
+      formData.append("photo", file);
       if (titre) {
-        formData.append('titre', titre)
+        formData.append("titre", titre);
       }
 
       const response = await authApi(`/photos/upload/${userId}`, {
-        method: 'POST',
-        body: formData
-      })
-      return response
+        method: "POST",
+        body: formData,
+      });
+      return response;
     } catch (error) {
-      console.error('Erreur : Impossible d\'uploader la photo', error)
-      throw error
+      console.error("Erreur : Impossible d'uploader la photo", error);
+      throw error;
+    }
+  }
+
+  async function loadUserPhotos(userId: string) {
+    try {
+      const response = await authApi(`/storage/users/${userId}/photos`, {
+        method: "GET",
+      });
+      return response;
+    } catch (error) {
+      console.error(
+        "Erreur : Impossible de récupérer vos photos stockées",
+        error,
+      );
+      throw error;
     }
   }
 
   async function ajouterPhotoToGalerie(galerieId: string, photoId: string) {
     try {
       await authApi(`/galeries/${galerieId}/photos`, {
-        method: 'POST',
-        body: { photoId }
-      })
+        method: "POST",
+        body: { photoId },
+      });
     } catch (error) {
-      console.error('Erreur : Impossible d\'ajouter la photo à la galerie', error)
-      throw error
+      console.error(
+        "Erreur : Impossible d'ajouter la photo à la galerie",
+        error,
+      );
+      throw error;
     }
   }
 
   async function loadUserGaleries(userId: string) {
     try {
-      const response = await authApi(`/photographes/${userId}/galeries`, { method: 'GET' })
-      return response
+      const response = await authApi(`/photographes/${userId}/galeries`, {
+        method: "GET",
+      });
+      return response;
     } catch (error) {
-      console.error('Erreur : Impossible de récupérer vos galeries', error)
-      throw error
+      console.error("Erreur : Impossible de récupérer vos galeries", error);
+      throw error;
     }
   }
 
   async function supprimerGalerie(id: string) {
     try {
-      await authApi(`/galeries/${id}`, { method: 'DELETE' })
+      await authApi(`/galeries/${id}`, { method: "DELETE" });
     } catch (error) {
-      console.error('Erreur : Impossible de supprimer la galerie', error)
-      throw error
+      console.error("Erreur : Impossible de supprimer la galerie", error);
+      throw error;
     }
   }
 
@@ -168,7 +198,8 @@ export const useGalerieStore = defineStore('galerie', () => {
     loadGalerieById,
     createGalerie,
     uploadPhoto,
+    loadUserPhotos,
     ajouterPhotoToGalerie,
-    supprimerGalerie
-  }
-})
+    supprimerGalerie,
+  };
+});

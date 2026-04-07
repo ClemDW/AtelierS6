@@ -1,94 +1,121 @@
 <script setup lang="ts">
-import { ref, onMounted, watch } from 'vue'
-import { useRouter } from 'vue-router'
-import { useAuthStore } from '../stores/auth'
-import { useGalerieStore } from '../stores/galerie'
+import { ref, onMounted, watch } from "vue";
+import { useRouter } from "vue-router";
+import { useAuthStore } from "../stores/auth";
+import { useGalerieStore } from "../stores/galerie";
 
-const router = useRouter()
-const authStore = useAuthStore()
-const galerieStore = useGalerieStore()
+const router = useRouter();
+const authStore = useAuthStore();
+const galerieStore = useGalerieStore();
 
-const myGaleries = ref<any[]>([])
-const isLoading = ref(false)
-const isUserLoading = ref(true)
-const errorMessage = ref('')
+const myGaleries = ref<any[]>([]);
+const isLoading = ref(false);
+const isUserLoading = ref(true);
+const errorMessage = ref("");
 
 async function fetchMyGaleries() {
-  console.log('--- fetchMyGaleries START ---')
+  console.log("--- fetchMyGaleries START ---");
   if (!authStore.isAuthenticated) {
-    console.log('Non authentifié, redirection vers login')
-    router.push({ name: 'login' })
-    return
+    console.log("Non authentifié, redirection vers login");
+    router.push({ name: "login" });
+    return;
   }
 
   if (!authStore.user) {
-    console.log('Utilisateur non chargé...')
-    isUserLoading.value = true
-    return
+    console.log("Utilisateur non chargé...");
+    isUserLoading.value = true;
+    return;
   }
 
-  isUserLoading.value = false
-  const userId = authStore.user.id
-  console.log('Tentative de chargement pour userId:', userId)
+  isUserLoading.value = false;
+  const userId = authStore.user.id;
+  console.log("Tentative de chargement pour userId:", userId);
 
-  isLoading.value = true
-  errorMessage.value = ''
-  
+  isLoading.value = true;
+  errorMessage.value = "";
+
   try {
-    const result = await galerieStore.loadUserGaleries(userId)
-    console.log('RÉUSSITE:', result)
-    myGaleries.value = result || []
+    const result = await galerieStore.loadUserGaleries(userId);
+    console.log("RÉUSSITE:", result);
+    myGaleries.value = result || [];
   } catch (error) {
-    console.error('ERREUR API:', error)
-    errorMessage.value = 'Erreur lors du chargement des galeries.'
+    console.error("ERREUR API:", error);
+    errorMessage.value = "Erreur lors du chargement des galeries.";
   } finally {
-    isLoading.value = false
-    console.log('--- fetchMyGaleries END ---')
+    isLoading.value = false;
+    console.log("--- fetchMyGaleries END ---");
   }
 }
 
 // On surveille le chargement de l'utilisateur
-watch(() => authStore.user, (u) => {
-  if (u) {
-    fetchMyGaleries()
-  } else if (!authStore.isAuthenticated) {
-    router.push({ name: 'login' })
-  }
-}, { immediate: true })
+watch(
+  () => authStore.user,
+  (u) => {
+    if (u) {
+      fetchMyGaleries();
+    } else if (!authStore.isAuthenticated) {
+      router.push({ name: "login" });
+    }
+  },
+  { immediate: true },
+);
 
 async function confirmDelete(id: string, title: string) {
-  if (confirm(`Êtes-vous sûr de vouloir supprimer la galerie "${title}" ? Cette action est irréversible.`)) {
+  if (
+    confirm(
+      `Êtes-vous sûr de vouloir supprimer la galerie "${title}" ? Cette action est irréversible.`,
+    )
+  ) {
     try {
-      await galerieStore.supprimerGalerie(id)
+      await galerieStore.supprimerGalerie(id);
       // On rafraîchit la liste locale
-      myGaleries.value = myGaleries.value.filter(g => g.id !== id)
+      myGaleries.value = myGaleries.value.filter((g) => g.id !== id);
     } catch (error) {
-      alert('Erreur lors de la suppression de la galerie.')
+      alert("Erreur lors de la suppression de la galerie.");
     }
   }
 }
 
 function handleLogout() {
-  authStore.logout()
-  router.push({ name: 'login' })
+  authStore.logout();
+  router.push({ name: "login" });
 }
 
 onMounted(() => {
   if (authStore.user) {
-    fetchMyGaleries()
+    fetchMyGaleries();
   }
-})
+});
 </script>
 
 <template>
   <div class="my-galeries-wrapper">
     <!-- Navigation -->
     <nav class="glass-nav">
-      <RouterLink :to="{ name: 'home' }" class="nav-brand">Photo<span class="highlight">Pro</span></RouterLink>
+      <RouterLink :to="{ name: 'home' }" class="nav-brand"
+        >Photo<span class="highlight">Pro</span></RouterLink
+      >
       <div class="nav-actions">
         <RouterLink :to="{ name: 'home' }" class="nav-link">Accueil</RouterLink>
+        <RouterLink :to="{ name: 'my-photos' }" class="nav-link"
+          >Mes Photos</RouterLink
+        >
         <button @click="handleLogout" class="logout-btn">
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+            <polyline points="16 17 21 12 16 7"></polyline>
+            <line x1="21" y1="12" x2="9" y2="12"></line>
+          </svg>
         </button>
       </div>
     </nav>
@@ -127,7 +154,9 @@ onMounted(() => {
       <div v-else-if="myGaleries.length === 0" class="empty-state">
         <div class="empty-illustration">📸</div>
         <h2>Aucune galerie pour le moment</h2>
-        <p>Commencez à partager votre travail en créant votre première galerie.</p>
+        <p>
+          Commencez à partager votre travail en créant votre première galerie.
+        </p>
         <RouterLink :to="{ name: 'create-galerie' }" class="create-btn-big">
           Créer ma première galerie
         </RouterLink>
@@ -135,25 +164,66 @@ onMounted(() => {
 
       <!-- Grille de galeries -->
       <div v-else class="galeries-grid">
-        <div v-for="galerie in myGaleries" :key="galerie.id" class="galerie-card" @click="router.push({ name: 'galerie-detail', params: { id: galerie.id } })">
+        <div
+          v-for="galerie in myGaleries"
+          :key="galerie.id"
+          class="galerie-card"
+          @click="
+            router.push({ name: 'galerie-detail', params: { id: galerie.id } })
+          "
+        >
           <div class="card-image">
             <div class="placeholder-pattern"></div>
             <div class="badges">
-              <span class="badge" :class="(galerie.type_galerie || 'private').toLowerCase()">
-                {{ (galerie.type_galerie || '').toLowerCase() === 'public' ? 'Publique' : 'Privée' }}
+              <span
+                class="badge"
+                :class="(galerie.type_galerie || 'private').toLowerCase()"
+              >
+                {{
+                  (galerie.type_galerie || "").toLowerCase() === "public"
+                    ? "Publique"
+                    : "Privée"
+                }}
               </span>
-              <span v-if="galerie.est_publiee" class="badge published">En ligne</span>
+              <span v-if="galerie.est_publiee" class="badge published"
+                >En ligne</span
+              >
               <span v-else class="badge draft">Brouillon</span>
             </div>
-            <button @click.stop="confirmDelete(galerie.id, galerie.titre)" class="delete-btn-overlay" title="Supprimer la galerie">
-              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+            <button
+              @click.stop="confirmDelete(galerie.id, galerie.titre)"
+              class="delete-btn-overlay"
+              title="Supprimer la galerie"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="18"
+                height="18"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2.5"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <polyline points="3 6 5 6 21 6"></polyline>
+                <path
+                  d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"
+                ></path>
+              </svg>
             </button>
           </div>
           <div class="card-content">
             <h3>{{ galerie.titre }}</h3>
-            <p class="description">{{ galerie.description || 'Aucune description' }}</p>
+            <p class="description">
+              {{ galerie.description || "Aucune description" }}
+            </p>
             <div class="card-footer">
-              <span class="date">{{ galerie.date_creation ? new Date(galerie.date_creation).toLocaleDateString('fr-FR') : 'Date inconnue' }}</span>
+              <span class="date">{{
+                galerie.date_creation
+                  ? new Date(galerie.date_creation).toLocaleDateString("fr-FR")
+                  : "Date inconnue"
+              }}</span>
               <span class="photo-link">Gérer →</span>
             </div>
           </div>
@@ -191,7 +261,9 @@ onMounted(() => {
   color: #f1f5f9;
 }
 
-.highlight { color: #3b82f6; }
+.highlight {
+  color: #3b82f6;
+}
 
 .nav-actions {
   display: flex;
@@ -205,7 +277,9 @@ onMounted(() => {
   font-weight: 500;
   transition: color 0.3s;
 }
-.nav-link:hover { color: #fff; }
+.nav-link:hover {
+  color: #fff;
+}
 
 .logout-btn {
   display: flex;
@@ -342,8 +416,11 @@ onMounted(() => {
 .placeholder-pattern {
   width: 100%;
   height: 100%;
-  background-image: 
-    radial-gradient(circle at 2px 2px, rgba(255,255,255,0.05) 1px, transparent 0);
+  background-image: radial-gradient(
+    circle at 2px 2px,
+    rgba(255, 255, 255, 0.05) 1px,
+    transparent 0
+  );
   background-size: 24px 24px;
 }
 
@@ -365,10 +442,26 @@ onMounted(() => {
   backdrop-filter: blur(4px);
 }
 
-.badge.public { background: rgba(16, 185, 129, 0.2); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.3); }
-.badge.private { background: rgba(245, 158, 11, 0.2); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.3); }
-.badge.published { background: rgba(59, 130, 246, 0.2); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.3); }
-.badge.draft { background: rgba(148, 163, 184, 0.2); color: #94a3b8; border: 1px solid rgba(148, 163, 184, 0.3); }
+.badge.public {
+  background: rgba(16, 185, 129, 0.2);
+  color: #10b981;
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+.badge.private {
+  background: rgba(245, 158, 11, 0.2);
+  color: #f59e0b;
+  border: 1px solid rgba(245, 158, 11, 0.3);
+}
+.badge.published {
+  background: rgba(59, 130, 246, 0.2);
+  color: #60a5fa;
+  border: 1px solid rgba(59, 130, 246, 0.3);
+}
+.badge.draft {
+  background: rgba(148, 163, 184, 0.2);
+  color: #94a3b8;
+  border: 1px solid rgba(148, 163, 184, 0.3);
+}
 
 .card-content {
   padding: 1.5rem;
@@ -439,6 +532,17 @@ onMounted(() => {
   transform: scale(1.1) !important;
 }
 
-@keyframes spin { to { transform: rotate(360deg); } }
-@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
 </style>

@@ -32,8 +32,8 @@ class GalerieRepository implements GalerieRepositoryInterface
                     (float) ($photo['taille_mo'] ?? 0),
                     $photo['nom_original'],
                     $photo['cle_s3'],
-                    $photo['titre'],
-                    $photo['date_upload']
+                    (string) ($photo['titre'] ?? ''),
+                    (string) ($photo['date_upload'] ?? '')
                 );
             }
         }

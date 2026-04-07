@@ -104,6 +104,31 @@ class StorageService
         }
     }
 
+    /**
+     * @return array<int, array{id:string, url:string, titre:string, nom_original:string, mime_type:string}>
+     */
+    public function listPhotosByOwner(string $ownerId): array
+    {
+        $stmt = $this->db->prepare(
+            'SELECT id, mime_type, nom_original, cle_s3, titre FROM photo WHERE owner_id = :owner_id ORDER BY date_upload DESC, id DESC'
+        );
+        $stmt->execute(['owner_id' => $ownerId]);
+        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        $photos = [];
+        foreach ($rows as $row) {
+            $photos[] = [
+                'id' => (string) ($row['id'] ?? ''),
+                'url' => $this->getPresignedUrl((string) ($row['cle_s3'] ?? '')),
+                'titre' => (string) ($row['titre'] ?? ''),
+                'nom_original' => (string) ($row['nom_original'] ?? ''),
+                'mime_type' => (string) ($row['mime_type'] ?? ''),
+            ];
+        }
+
+        return $photos;
+    }
+
     public function store(InputPhotoDTO $dto): OutputPhotoDTO {
         try {
             $photoId = $this->generateUuid();

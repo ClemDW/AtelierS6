@@ -1,69 +1,98 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
-import { useAuthStore } from '../stores/auth'
-import { useGalerieStore } from '../stores/galerie'
-import { useRouter } from 'vue-router'
+import { ref, onMounted, watch } from "vue";
+import { useAuthStore } from "../stores/auth";
+import { useGalerieStore } from "../stores/galerie";
+import { useRouter } from "vue-router";
 
-const authStore = useAuthStore()
-const galerieStore = useGalerieStore()
-const router = useRouter()
+const authStore = useAuthStore();
+const galerieStore = useGalerieStore();
+const router = useRouter();
 
-const recentGaleries = ref<any[]>([])
-const isLoading = ref(false)
+const recentGaleries = ref<any[]>([]);
+const isLoading = ref(false);
 
 const handleLogout = () => {
-  authStore.logout()
-  router.push({ name: 'login' })
-}
+  authStore.logout();
+  router.push({ name: "login" });
+};
 
 const fetchRecentGaleries = async () => {
-  if (!authStore.user?.id) return
-  isLoading.value = true
+  if (!authStore.user?.id) return;
+  isLoading.value = true;
   try {
-    const result = await galerieStore.loadUserGaleries(authStore.user.id)
-    recentGaleries.value = (result || []).slice(0, 3) 
+    const result = await galerieStore.loadUserGaleries(authStore.user.id);
+    recentGaleries.value = (result || []).slice(0, 3);
   } catch (error) {
-    console.error('Error loading summary:', error)
+    console.error("Error loading summary:", error);
   } finally {
-    isLoading.value = false
+    isLoading.value = false;
   }
-}
+};
+
+watch(
+  () => authStore.user,
+  (user: { id?: string } | null) => {
+    if (user?.id) {
+      fetchRecentGaleries();
+    }
+  },
+  { immediate: true },
+);
 
 const confirmDelete = async (id: string, title: string) => {
   if (confirm(`Supprimer la galerie "${title}" ?`)) {
     try {
-      await galerieStore.supprimerGalerie(id)
-      recentGaleries.value = recentGaleries.value.filter(g => g.id !== id)
+      await galerieStore.supprimerGalerie(id);
+      recentGaleries.value = recentGaleries.value.filter((g: any) => g.id !== id);
     } catch (error) {
-      alert('Erreur lors de la suppression')
+      alert("Erreur lors de la suppression");
     }
   }
-}
+};
 
 onMounted(() => {
-  if (authStore.user) {
-    fetchRecentGaleries()
+  if (authStore.isAuthenticated && !authStore.user) {
+    authStore.fetchUserProfile();
   }
-})
+});
 </script>
 
 <template>
   <div class="dashboard-wrapper">
     <nav class="glass-nav">
       <div class="nav-brand">Photo<span class="highlight">Pro</span></div>
-      
+
       <div class="nav-user">
         <div class="user-info">
-          <span class="greeting">Hello, <strong>{{ authStore.user?.email || 'Photographer' }}</strong></span>
-          <span v-if="authStore.user?.role" class="user-role">{{ authStore.user.role }}</span>
+          <span class="greeting"
+            >Hello,
+            <strong>{{ authStore.user?.email || "Photographer" }}</strong></span
+          >
+          <span v-if="authStore.user?.role" class="user-role">{{
+            authStore.user.role
+          }}</span>
         </div>
         <button @click="handleLogout" class="logout-btn">
-          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="18"
+            height="18"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+            <polyline points="16 17 21 12 16 7"></polyline>
+            <line x1="21" y1="12" x2="9" y2="12"></line>
+          </svg>
           Logout
         </button>
       </div>
     </nav>
-    
+
     <main class="dashboard-content">
       <header class="page-header">
         <div class="header-info">
@@ -74,9 +103,8 @@ onMounted(() => {
           <RouterLink :to="{ name: 'my-galeries' }" class="secondary-btn">
             Mes Galeries
           </RouterLink>
-          <RouterLink :to="{ name: 'create-galerie' }" class="create-btn">
-            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-            Nouvelle galerie
+          <RouterLink :to="{ name: 'my-photos' }" class="secondary-btn">
+            Mes Photos
           </RouterLink>
         </div>
       </header>
@@ -87,7 +115,9 @@ onMounted(() => {
           <div class="stat-icon-simple galleries">📸</div>
           <div class="stat-data">
             <h3>Mes Galeries</h3>
-            <span class="number">{{ recentGaleries.length < 3 ? recentGaleries.length : '12' }}</span>
+            <span class="number">{{
+              recentGaleries.length < 3 ? recentGaleries.length : "12"
+            }}</span>
           </div>
         </div>
       </section>
@@ -96,7 +126,9 @@ onMounted(() => {
       <section class="recent-section">
         <div class="section-header">
           <h3>Galeries récentes</h3>
-          <RouterLink :to="{ name: 'my-galeries' }" class="text-link">Tout voir →</RouterLink>
+          <RouterLink :to="{ name: 'my-galeries' }" class="text-link"
+            >Tout voir →</RouterLink
+          >
         </div>
 
         <div v-if="isLoading" class="loading-state">Chargement...</div>
@@ -104,16 +136,49 @@ onMounted(() => {
           Aucune galerie à afficher.
         </div>
         <div v-else class="recent-grid">
-          <div v-for="galerie in recentGaleries" :key="galerie.id" class="recent-card" @click="router.push({ name: 'galerie-detail', params: { id: galerie.id } })">
+          <div
+            v-for="galerie in recentGaleries"
+            :key="galerie.id"
+            class="recent-card"
+            @click="
+              router.push({
+                name: 'galerie-detail',
+                params: { id: galerie.id },
+              })
+            "
+          >
             <div class="card-mini-img">
-               <div class="placeholder-dots"></div>
-               <button @click.stop="confirmDelete(galerie.id, galerie.titre)" class="delete-mini-btn">
-                 <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
-               </button>
+              <div class="placeholder-dots"></div>
+              <button
+                @click.stop="confirmDelete(galerie.id, galerie.titre)"
+                class="delete-mini-btn"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2.5"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <polyline points="3 6 5 6 21 6"></polyline>
+                  <path
+                    d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"
+                  ></path>
+                </svg>
+              </button>
             </div>
             <div class="card-mini-info">
               <h4>{{ galerie.titre }}</h4>
-              <span class="card-mini-date">{{ new Date(galerie.date_creation).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' }) }}</span>
+              <span class="card-mini-date">{{
+                new Date(galerie.date_creation).toLocaleDateString("fr-FR", {
+                  day: "numeric",
+                  month: "short",
+                })
+              }}</span>
             </div>
           </div>
         </div>
@@ -126,7 +191,7 @@ onMounted(() => {
 .dashboard-wrapper {
   min-height: 100vh;
   background-color: #0b0f19;
-  background-image: 
+  background-image:
     radial-gradient(at 0% 0%, rgba(16, 185, 129, 0.15) 0px, transparent 50%),
     radial-gradient(at 100% 100%, rgba(59, 130, 246, 0.15) 0px, transparent 50%);
   display: flex;
@@ -372,8 +437,12 @@ onMounted(() => {
 }
 
 .placeholder-dots {
-  width: 100%; height: 100%;
-  background-image: radial-gradient(rgba(255,255,255,0.05) 1px, transparent 1px);
+  width: 100%;
+  height: 100%;
+  background-image: radial-gradient(
+    rgba(255, 255, 255, 0.05) 1px,
+    transparent 1px
+  );
   background-size: 15px 15px;
 }
 
@@ -414,6 +483,22 @@ onMounted(() => {
   color: #64748b;
 }
 
-@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-@keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
 </style>

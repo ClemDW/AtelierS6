@@ -4,12 +4,10 @@ use Slim\Factory\AppFactory;
 
 $builder = new ContainerBuilder();
 $builder->addDefinitions(__DIR__ . '/settings.php');
+$builder->addDefinitions(__DIR__ . '/container.php');
 $c = $builder->build();
 
 $app = AppFactory::createFromContainer($c);
-
-$dotenv = \Dotenv\Dotenv::createImmutable(__DIR__ . '/../../env', 'storage.env');
-$dotenv->load();
 
 
 $app->addBodyParsingMiddleware();

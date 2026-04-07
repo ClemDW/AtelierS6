@@ -4,6 +4,7 @@ use Aws\S3\S3Client;
 use Psr\Container\ContainerInterface;
 use storage\api\actions\UploadAction;
 use storage\api\actions\GetPhotoAction;
+use storage\api\actions\ListPhotosAction;
 use storage\core\usecases\StorageService;
 use storage\infra\messaging\PhotoUploadedPublisher;
 
@@ -83,6 +84,9 @@ return [
     },
     GetPhotoAction::class => function(ContainerInterface $c){
     return new GetPhotoAction($c->get(StorageService::class));
+    },
+    ListPhotosAction::class=> function(ContainerInterface $c){
+    return new ListPhotosAction($c->get(StorageService::class));
     }
 
 

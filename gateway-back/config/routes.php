@@ -33,6 +33,11 @@ return function (App $app): App {
         return $response->withHeader('Content-Type', 'application/json');
     });
 
+    // Public photo streaming endpoint used by <img src="..."> in front.
+    $app->get('/api/back/storage/photos/{id}', function (Request $request, Response $response, array $args) use ($storageProxy): Response {
+        return $storageProxy($request, $response, ['path' => 'photos/' . $args['id']]);
+    });
+
     $app->group('/api/back/auth', function (\Slim\Routing\RouteCollectorProxy $group) use ($authProxy) {
         $group->post('/register', function (Request $request, Response $response) use ($authProxy): Response {
             return $authProxy($request, $response, ['path' => 'register']);
@@ -60,12 +65,12 @@ return function (App $app): App {
         $group->post('/storage/users/{id}/photos', function (Request $request, Response $response, array $args) use ($storageProxy): Response {
             return $storageProxy($request, $response, ['path' => 'users/' . $args['id'] . '/photos']);
         });
-        $group->get('/storage/photos/{id}', function (Request $request, Response $response, array $args) use ($storageProxy): Response {
-            return $storageProxy($request, $response, ['path' => 'photos/' . $args['id']]);
-        });
         $group->post('/photos/upload/{id}', function (Request $request, Response $response, array $args) use ($storageProxy): Response {
             $forwardArgs = ['path' => 'users/' . $args['id'] . '/photos'];
             return $storageProxy($request, $response, $forwardArgs);
+        });
+        $group->get('/storage/users/{id}/photos', function (Request $request, Response $response, array $args) use ($storageProxy): Response {
+            return $storageProxy($request, $response, ['path' => 'users/' . $args['id'] . '/photos']);
         });
         $group->map(['GET', 'POST', 'PUT', 'PATCH', 'DELETE'], '/storage[/{path:.*}]', $storageProxy);
 
