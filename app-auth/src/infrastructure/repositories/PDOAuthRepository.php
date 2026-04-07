@@ -5,6 +5,7 @@ namespace photopro\infra\repositories;
 
 use photopro\core\application\ports\spi\repositoryInterfaces\AuthRepositoryInterface;
 use photopro\core\domain\exceptions\EmailAlreadyExistsException;
+use Ramsey\Uuid\Uuid;
 
 class PDOAuthRepository implements AuthRepositoryInterface
 {
@@ -46,8 +47,8 @@ class PDOAuthRepository implements AuthRepositoryInterface
             throw new EmailAlreadyExistsException();
         }
 
-        // Générer un ID unique
-        $userId = bin2hex(random_bytes(16));
+        // Générer un ID unique (UUID v4)
+        $userId = Uuid::uuid4()->toString();
 
         $sql = 'INSERT INTO users (id, email, password) VALUES (:id, :email, :password)';
         

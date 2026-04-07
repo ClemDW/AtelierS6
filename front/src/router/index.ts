@@ -27,6 +27,12 @@ const router = createRouter({
       component: () => import('../views/GaleriesView.vue')
     },
     {
+      path: '/galeries/create',
+      name: 'create-galerie',
+      component: () => import('../views/CreateGalerieView.vue'),
+      meta: { requiresAuth: true }
+    },
+    {
       path: '/galeries/:id',
       name: 'galerie-detail',
       component: () => import('../views/GalerieDetailView.vue')

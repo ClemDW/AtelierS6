@@ -40,6 +40,7 @@ final class SignupAction extends AbstractAction
         $passwordConfirmation = isset($data['password_confirmation']) ? (string)$data['password_confirmation'] : null;
 
         if ($email === '' || $password === '' || $name === '') {
+            error_log("Signup failed: Missing fields. email='$email', name='$name'");
             throw new HttpBadRequestException($request, 'Email, password and name are required');
         }
 
@@ -68,6 +69,7 @@ final class SignupAction extends AbstractAction
                 ->withHeader('Content-Type', 'application/json')
                 ->withStatus(201);
         } catch (InvalidInputException | \InvalidArgumentException $e) {
+            error_log("Signup validation error: " . $e->getMessage());
             $response->getBody()->write(json_encode([
                 'error' => $e->getMessage()
             ]));
@@ -82,6 +84,7 @@ final class SignupAction extends AbstractAction
                 ->withHeader('Content-Type', 'application/json')
                 ->withStatus(409);
         } catch (\RuntimeException $e) {
+            error_log("Signup runtime error: " . $e->getMessage());
             // duplicates or custom runtime errors -> 400
             $response->getBody()->write(json_encode([
                 'error' => $e->getMessage()

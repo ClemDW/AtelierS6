@@ -30,8 +30,14 @@ const handleLogout = () => {
     
     <main class="dashboard-content">
       <header class="page-header">
-        <h2>Welcome to your studio</h2>
-        <p>Manage your photos, galleries, and clients all from one place.</p>
+        <div>
+          <h2>Welcome to your studio</h2>
+          <p>Manage your photos, galleries, and clients all from one place.</p>
+        </div>
+        <RouterLink :to="{ name: 'create-galerie' }" class="create-btn">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+          Nouvelle galerie
+        </RouterLink>
       </header>
       
       <section class="stats-grid">
@@ -159,6 +165,11 @@ const handleLogout = () => {
 .page-header {
   margin-bottom: 3rem;
   animation: fadeIn 0.5s ease;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
 }
 
 .page-header h2 {
@@ -170,6 +181,26 @@ const handleLogout = () => {
   color: #94a3b8;
   font-size: 1.1rem;
   margin: 0;
+}
+
+.create-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
+  color: #ffffff;
+  text-decoration: none;
+  font-size: 0.95rem;
+  font-weight: 600;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.create-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 25px -10px rgba(59, 130, 246, 0.5);
 }
 
 .stats-grid {
