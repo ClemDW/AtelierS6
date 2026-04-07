@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 namespace photopro\core\domain\entities;
 
-class Photo
+class Photo implements \JsonSerializable
 {
     private string $id;
     private string $ownerId;
@@ -74,4 +74,17 @@ class Photo
         return $this->dateUpload;
     }
 
+    public function jsonSerialize(): mixed
+    {
+        return [
+            'id' => $this->id,
+            'ownerId' => $this->ownerId,
+            'mimeType' => $this->mimeType,
+            'tailleMo' => $this->tailleMo,
+            'nomOriginal' => $this->nomOriginal,
+            'cleS3' => $this->cleS3,
+            'titre' => $this->titre,
+            'dateUpload' => $this->dateUpload,
+        ];
+    }
 }
