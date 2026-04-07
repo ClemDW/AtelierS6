@@ -13,3 +13,8 @@ S3/data
     
 vendor
 composer.lock
+
+.idea
+.DS_Store
+.claude
+.specify
