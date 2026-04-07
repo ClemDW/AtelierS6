@@ -1,5 +1,4 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
-import vuetify, { transformAssetUrls } from 'vite-plugin-vuetify'
 
 export default defineNuxtConfig({
   compatibilityDate: '2025-07-15',
@@ -11,25 +10,13 @@ export default defineNuxtConfig({
     }
   },
 
-  build: {
-    transpile: ['vuetify'],
-  },
-
   modules: [
-    // Configuration indispensable pour charger le CSS de Vuetify via Vite
-    (_options, nuxt) => {
-      nuxt.hooks.hook('vite:extendConfig', (config) => {
-        // @ts-expect-error
-        config.plugins.push(vuetify({ autoImport: true }))
-      })
-    }
+    'vuetify-nuxt-module'
   ],
 
-  vite: {
-    vue: {
-      template: {
-        transformAssetUrls,
-      },
-    },
-  },
+  vuetify: {
+    moduleOptions: {
+      /* Paramètres additionnels Vuetify si nécessaire */
+    }
+  }
 })
