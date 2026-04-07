@@ -3,7 +3,8 @@
 use DI\ContainerBuilder;
 use Slim\Factory\AppFactory;
 
-
+$dotenv = \Dotenv\Dotenv::createImmutable(__DIR__);
+$dotenv->safeLoad();
 
 $builder = new ContainerBuilder();
 $builder->addDefinitions(__DIR__ . '/settings.php');

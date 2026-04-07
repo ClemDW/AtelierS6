@@ -3,6 +3,20 @@ networks:
     driver: bridge
 
 services:
+  front.photopro:
+    build:
+      context: build
+      dockerfile: 8.4-cli.Dockerfile
+    working_dir: /app
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./front:/app
+      - /app/node_modules
+    networks:
+      - photopro.net
+    command: sh -c "npm install && npm run dev -- --host 0.0.0.0"
+
   gatewayfront.photopro:
     build:
       context: build
@@ -148,8 +162,8 @@ services:
         condition: service_healthy
       mail.photopro:
         condition: service_started
-    env_file: ./env/mail.env
-    command: "sh -lc '[ -d vendor ] || composer install --no-interaction --prefer-dist; php /var/www/bin/consumer.php'"
+    env_file: ./env/mail-consumer.env
+    command: "php /var/www/bin/consumer.php"
 
   ##############################################
   ### Service Galerie Consumer (RabbitMQ)
@@ -192,6 +206,7 @@ services:
       - photopro.net
     volumes:
       - ./sql/db_user.schema.sql:/docker-entrypoint-initdb.d/01-db_user.schema.sql
+      - ./sql/db_user.data.sql:/docker-entrypoint-initdb.d/02-db_user.data.sql
 
   adminer:
     image: adminer

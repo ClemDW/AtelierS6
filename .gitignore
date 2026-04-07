@@ -2,7 +2,13 @@
 
 rabbitmq.photopro
 ./node_modules/*
-./front/node_modules/*
+./app-galerie/composer.lock
+./front/.vite
+./front/dist
+./front/node_modules
+./front/.vscode
+
+./app-galerie/vendor
 S3/data
     
 vendor
