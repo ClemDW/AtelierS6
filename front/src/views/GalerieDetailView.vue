@@ -64,9 +64,13 @@ const processFiles = async (files: File[]) => {
     for (const file of files) {
       console.log(`Début upload pour: ${file.name}`);
       const result = await galerieStore.uploadPhoto(userId, file)
-      console.log('Résultat upload:', result);
+      // Robust parsing in case of content-type issues
+      let uploadResult = result;
+      if (typeof result === 'string') {
+        try { uploadResult = JSON.parse(result); } catch(e) { console.error('Parse error:', e); }
+      }
       
-      const photoId = result.photo_id || result.photoId;
+      const photoId = uploadResult.photo_id || uploadResult.photoId || uploadResult.id;
       if (!photoId) throw new Error('ID manquant');
 
       await galerieStore.ajouterPhotoToGalerie(galerieId, photoId)

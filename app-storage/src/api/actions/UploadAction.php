@@ -124,7 +124,9 @@ class UploadAction
             'url' => $url,
             'queued' => true,
         ]));
-        return $response->withStatus(201);
+        return $response
+            ->withHeader('Content-Type', 'application/json')
+            ->withStatus(201);
 
     }
 
