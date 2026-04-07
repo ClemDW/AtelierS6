@@ -43,7 +43,9 @@ const confirmDelete = async (id: string, title: string) => {
   if (confirm(`Supprimer la galerie "${title}" ?`)) {
     try {
       await galerieStore.supprimerGalerie(id);
-      recentGaleries.value = recentGaleries.value.filter((g: any) => g.id !== id);
+      recentGaleries.value = recentGaleries.value.filter(
+        (g: any) => g.id !== id,
+      );
     } catch (error) {
       alert("Erreur lors de la suppression");
     }
