@@ -1,7 +1,8 @@
 *.env
 
 rabbitmq.photopro
-
+./node_modules/*
+./front/node_modules/*
 S3/data
     
 vendor
