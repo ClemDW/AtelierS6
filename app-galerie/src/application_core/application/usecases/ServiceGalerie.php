@@ -143,10 +143,16 @@ class ServiceGalerie implements ServiceGalerieInterface
         $this->galerieRepository->modifierMiseEnPage($galerieId, $miseEnPage);
     }
 
+    public function supprimerGalerie(string $galerieId): void
+    {
+        $this->getGalerieOuException($galerieId);
+        $this->galerieRepository->supprimerGalerie($galerieId);
+    }
+
     public function creerGalerie(CreerGalerieDTO $dto): GalerieAfficheDTO
     {
         $id = Uuid::uuid4()->toString();
-        $dateCreation = (new \DateTime())->format('Y-m-d H:i:s');
+        $dateCreation = (new \DateTime())->format('c'); // Format ISO 8601 pour JavaScript
         $datePublication = $dto->estPubliee ? $dateCreation : '';
         $codeAcces = $dto->typeGalerie !== 'public' ? bin2hex(random_bytes(4)) : '';
         $url = $dto->typeGalerie !== 'public' ? '/galeries/' . $id : '';

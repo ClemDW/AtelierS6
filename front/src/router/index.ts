@@ -23,8 +23,7 @@ const router = createRouter({
     },
     {
       path: '/galeries',
-      name: 'galeries',
-      component: () => import('../views/GaleriesView.vue')
+      redirect: { name: 'home' }
     },
     {
       path: '/galeries/create',

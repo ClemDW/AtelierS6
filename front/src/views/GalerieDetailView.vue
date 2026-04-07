@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 import { useGalerieStore } from '../stores/galerie'
 
+const router = useRouter()
 const route = useRoute()
 const authStore = useAuthStore()
 const galerieStore = useGalerieStore()
@@ -82,6 +83,20 @@ const processFiles = async (files: File[]) => {
   }
 }
 
+const handleDelete = async () => {
+  const galerie = galerieStore.currentGalerie
+  if (!galerie) return
+
+  if (confirm(`Êtes-vous sûr de vouloir supprimer définitivement la galerie "${galerie.titre}" ?`)) {
+    try {
+      await galerieStore.supprimerGalerie(galerie.id)
+      router.push({ name: 'my-galeries' })
+    } catch (error) {
+      alert('Impossible de supprimer la galerie.')
+    }
+  }
+}
+
 onMounted(() => {
   fetchGalerieContent()
 })
@@ -92,7 +107,7 @@ onMounted(() => {
     <header class="header">
       <div class="logo">Photo<span class="highlight">Pro</span></div>
       <nav>
-        <RouterLink :to="{ name: 'galeries' }" class="nav-link">← Retour aux galeries</RouterLink>
+        <RouterLink :to="{ name: 'my-galeries' }" class="nav-link">← Mes Galeries</RouterLink>
       </nav>
     </header>
 
@@ -104,13 +119,24 @@ onMounted(() => {
       <div v-else-if="errorMessage" class="state-message error">
         <h2>Oups !</h2>
         <p>{{ errorMessage }}</p>
-        <RouterLink :to="{ name: 'galeries' }" class="back-btn">Retour aux galeries publiques</RouterLink>
+        <RouterLink :to="{ name: 'home' }" class="back-btn">Retour au tableau de bord</RouterLink>
       </div>
 
       <div v-else-if="galerieStore.currentGalerie" class="galerie-content-section">
         <!-- En-tête de la galerie -->
         <div class="galerie-header">
-          <h1>{{ galerieStore.currentGalerie.titre }}</h1>
+          <div class="title-with-actions">
+            <h1>{{ galerieStore.currentGalerie.titre }}</h1>
+            <button 
+              v-if="authStore.user && (galerieStore.currentGalerie as any).photographe_id === authStore.user.id" 
+              @click="handleDelete" 
+              class="delete-btn-main"
+              title="Supprimer cette galerie"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
+              Supprimer la galerie
+            </button>
+          </div>
           <p class="date">Créée le {{ galerieStore.currentGalerie.date_creation ? new Date(galerieStore.currentGalerie.date_creation).toLocaleDateString('fr-FR') : 'Date inconnue' }}</p>
           <p v-if="galerieStore.currentGalerie.description" class="description-longue">
             {{ galerieStore.currentGalerie.description }}
@@ -276,13 +302,35 @@ onMounted(() => {
   margin-right: auto;
 }
 
-.header-main {
+.title-with-actions {
   display: flex;
   justify-content: center;
   align-items: center;
   gap: 2rem;
   margin-bottom: 1rem;
   flex-wrap: wrap;
+}
+
+.delete-btn-main {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem 1.2rem;
+  background: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  border-radius: 10px;
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.delete-btn-main:hover {
+  background: #ef4444;
+  color: white;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
 }
 
 .galerie-header h1 {
