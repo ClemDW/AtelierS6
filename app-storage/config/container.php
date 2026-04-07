@@ -23,17 +23,22 @@ return [
 
     // Base de données
     PDO::class => function(ContainerInterface $c) {
-        $host = $_ENV['DB_HOST'] ?? getenv('DB_HOST') ?? 'galerie.db';
-        $port = $_ENV['DB_PORT'] ?? getenv('DB_PORT') ?? '5432';
-        $dbname = $_ENV['DB_NAME'] ?? getenv('DB_NAME') ?? 'galeriedb';
-        $user = $_ENV['DB_USER'] ?? getenv('DB_USER') ?? 'admin';
-        $pass = $_ENV['DB_PASS'] ?? getenv('DB_PASS') ?? 'admin';
+        $host = getenv('DB_HOST') ?: 'galerie.db';
+        $port = getenv('DB_PORT') ?: '5432';
+        $dbname = getenv('DB_NAME') ?: 'galeriedb';
+        $user = getenv('DB_USER') ?: 'admin';
+        $pass = getenv('DB_PASS') ?: 'admin';
 
         $dsn = "pgsql:host=$host;port=$port;dbname=$dbname";
-        return new PDO($dsn, $user, $pass, [
-            PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-            PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-        ]);
+        
+        try {
+            return new PDO($dsn, $user, $pass, [
+                PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+                PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+            ]);
+        } catch (\PDOException $e) {
+            throw new \PDOException("Erreur de connexion : " . $e->getMessage() . " (User used: $user)");
+        }
     },
 
     'S3_internal_client'=> function(ContainerInterface $c){
