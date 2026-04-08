@@ -21,4 +21,6 @@ interface GalerieRepositoryInterface
     public function getGalerieById(string $id): ?Galerie;
     public function creerGalerie(Galerie $galerie): Galerie;
     public function supprimerGalerie(string $id): void;
+    /** @return array{nom: string, email_contact: string|null}|null */
+    public function getPhotographeById(string $photographeId): ?array;
 }

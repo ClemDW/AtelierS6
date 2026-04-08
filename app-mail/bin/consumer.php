@@ -83,13 +83,18 @@ try {
         echo "[ENVOI DES EMAILS]\n";
 
         // Envoyer les notifications par email
-        $notificationService->handleGaleryEvent($data);
+        $success = $notificationService->handleGaleryEvent($data);
 
         echo "=====================================\n";
 
-        // Acquitter le message
-        $message->ack();
-        echo "[OK] Message traité et acquitté\n";
+        if ($success) {
+            $message->ack();
+            echo "[OK] Message traité et acquitté\n";
+        } else {
+            // Nack avec requeue=true : le message reste en queue jusqu'à ce que le mailer soit disponible
+            $message->nack(true);
+            echo "[WARN] Envoi échoué, message remis en queue\n";
+        }
     };
 
     // Configuration du consommateur

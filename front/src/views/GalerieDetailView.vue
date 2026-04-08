@@ -403,7 +403,7 @@ watch(
             <input
               id="galerie-title"
               v-model="editForm.titre"
-              @blur="saveGalerieInfos"
+              @blur="() => { clearTimeout(infosSaveDebounce); saveGalerieInfos(); }"
               class="edit-input"
               type="text"
               placeholder="Nom de la galerie"
@@ -415,7 +415,7 @@ watch(
             <textarea
               id="galerie-description"
               v-model="editForm.description"
-              @blur="saveGalerieInfos"
+              @blur="() => { clearTimeout(infosSaveDebounce); saveGalerieInfos(); }"
               class="edit-textarea"
               rows="4"
               placeholder="Décrivez cette galerie"
