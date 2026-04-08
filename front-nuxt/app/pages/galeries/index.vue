@@ -1,6 +1,16 @@
 <template>
   <div>
-    <h1 class="text-h3 mb-6">Galeries Publiques</h1>
+    <div class="d-flex justify-space-between align-center mb-6">
+      <h1 class="text-h3">Galeries Publiques</h1>
+      <v-btn
+        color="primary"
+        variant="elevated"
+        prepend-icon="mdi-lock"
+        href="/privee"
+      >
+        Rejoindre une galerie privée
+      </v-btn>
+    </div>
     <v-row v-if="galeries && galeries.length">
       <v-col
         v-for="galerie in galeries"
@@ -12,8 +22,8 @@
         <v-card class="mx-auto" max-width="400">
           <!-- Si la galerie a une image de couverture, on l'affiche avec v-img pour le SSR -->
           <v-img
-            v-if="galerie.cover_image"
-            :src="getImageUrl(galerie.cover_image)"
+            v-if="galerie.photo_entete_id"
+            :src="getImageUrl(galerie.photo_entete_id)"
             height="200px"
             cover
           ></v-img>
@@ -21,18 +31,19 @@
           <v-card-title>{{ galerie.titre }}</v-card-title>
           
           <v-card-subtitle>
-            Créée en {{ new Date(galerie.dateCreation).getFullYear() }}
+            Créée en {{ new Date(galerie.date_creation).getFullYear() }}
           </v-card-subtitle>
           
           <v-card-text>
             <p>{{ galerie.description }}</p>
           </v-card-text>
 
-          <v-card-actions>
+          <v-card-actions class="px-4 pb-4">
             <v-btn
               color="primary"
-              variant="text"
-              :to="`/galeries/${galerie.id}`"
+              variant="elevated"
+              block
+              :href="`/galeries/${galerie.id}`"
             >
               Voir la galerie
             </v-btn>
@@ -47,8 +58,9 @@
 <script setup>
 const config = useRuntimeConfig()
 
-// On utilise le proxy de Nitro qui fera l'appel interne vers GatewayFront
-const { data, error, pending } = await useFetch(`${config.public.apiBase}/galeries`, {
+// Récupération correcte: Serveur pointe vers GatewayDocker / Navigateur pointe sur Localhost
+const apiUrl = import.meta.client ? config.public.apiBase : config.apiBase
+const { data, error, pending } = await useFetch(`${apiUrl}/galeries`, {
   key: 'galeries-list'
 })
 
@@ -60,14 +72,12 @@ const galeries = computed(() => {
   return []
 })
 
-// Les images sont TOUJOURS rendues par le navigateur, on pointe donc toujours vers l'URL publique du service de stockage
 const getImageUrl = (imagePath) => {
   if (!imagePath) return ''
   if (imagePath.startsWith('http')) return imagePath
   return `${config.public.storageBase}/photos/${imagePath}`
 }
 
-// Optionnel: Gérer les erreurs de fetch en développement
 if (error.value) {
   console.error("Erreur de récupération SSR : ", error.value)
 }
