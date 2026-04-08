@@ -20,6 +20,22 @@
 
 ## Données de test
 
-email : jean@photopro.com 
+email : jean@photopro.com mdp : jean
 
- mdp : jean
+email : paul@photopro.com mdp : paul123456
+
+email : marc@photopro.com mdp : marc123456
+
+## Lien github
+
+https://github.com/ClemDW/AtelierS6.git
+
+## Lien Docketu
+
+BackOffice : http://docketu.iutnc.univ-lorraine.fr:11200
+
+FrontOffice : http://docketu.iutnc.univ-lorraine.fr:16067
+
+## App mobile
+
+Mettez-vous dans le dossier mobile/photopro/ et lancé flutter run
