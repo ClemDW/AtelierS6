@@ -249,6 +249,23 @@ const addClientAccess = async () => {
   }
 };
 
+const copyAccessCode = async () => {
+  const codeAcces =
+    galerieStore.currentGalerie?.code_acces ||
+    galerieStore.currentGalerie?.codeAcces;
+  if (!codeAcces) return;
+
+  try {
+    await navigator.clipboard.writeText(codeAcces);
+    saveSuccess.value = "Code d'accès copié dans le presse-papiers !";
+    setTimeout(() => {
+      saveSuccess.value = "";
+    }, 3000);
+  } catch (error) {
+    saveError.value = "Impossible de copier le code.";
+  }
+};
+
 const choisirPhotoEntete = async (photoId: string) => {
   const galerie = galerieStore.currentGalerie;
   if (!galerie) return;
@@ -392,7 +409,9 @@ watch(
             Créée le
             {{
               galerieStore.currentGalerie?.dateCreation
-                ? new Date(galerieStore.currentGalerie.dateCreation).toLocaleDateString("fr-FR")
+                ? new Date(
+                    galerieStore.currentGalerie.dateCreation,
+                  ).toLocaleDateString("fr-FR")
                 : "Date inconnue"
             }}
           </p>
@@ -403,7 +422,12 @@ watch(
             <input
               id="galerie-title"
               v-model="editForm.titre"
-              @blur="() => { clearTimeout(infosSaveDebounce); saveGalerieInfos(); }"
+              @blur="
+                () => {
+                  clearTimeout(infosSaveDebounce);
+                  saveGalerieInfos();
+                }
+              "
               class="edit-input"
               type="text"
               placeholder="Nom de la galerie"
@@ -415,7 +439,12 @@ watch(
             <textarea
               id="galerie-description"
               v-model="editForm.description"
-              @blur="() => { clearTimeout(infosSaveDebounce); saveGalerieInfos(); }"
+              @blur="
+                () => {
+                  clearTimeout(infosSaveDebounce);
+                  saveGalerieInfos();
+                }
+              "
               class="edit-textarea"
               rows="4"
               placeholder="Décrivez cette galerie"
@@ -479,6 +508,55 @@ watch(
                   </li>
                 </ul>
               </div>
+            </div>
+
+            <div
+              class="access-code-panel"
+              v-if="
+                galerieStore.currentGalerie?.code_acces ||
+                galerieStore.currentGalerie?.codeAcces
+              "
+            >
+              <h3>Code d'accès de la galerie</h3>
+              <div class="code-display">
+                <code class="access-code">{{
+                  galerieStore.currentGalerie?.code_acces ||
+                  galerieStore.currentGalerie?.codeAcces
+                }}</code>
+                <button
+                  class="copy-code-btn"
+                  @click="copyAccessCode"
+                  title="Copier le code d'accès"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <rect
+                      x="9"
+                      y="9"
+                      width="13"
+                      height="13"
+                      rx="2"
+                      ry="2"
+                    ></rect>
+                    <path
+                      d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"
+                    ></path>
+                  </svg>
+                </button>
+              </div>
+              <p class="code-hint">
+                Partagez ce code avec vos clients pour accéder à la galerie
+                privée.
+              </p>
             </div>
 
             <div
@@ -1204,5 +1282,65 @@ watch(
   to {
     opacity: 1;
   }
+}
+
+.access-code-panel {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.access-code-panel h3 {
+  margin: 0 0 0.7rem;
+  font-size: 0.95rem;
+}
+
+.code-display {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-bottom: 0.8rem;
+}
+
+.access-code {
+  flex: 1;
+  background: rgba(15, 23, 42, 0.8);
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  color: #dbeafe;
+  padding: 0.75rem 0.9rem;
+  border-radius: 8px;
+  font-family: "Courier New", monospace;
+  font-size: 1rem;
+  font-weight: 600;
+  letter-spacing: 1px;
+  word-break: break-all;
+}
+
+.copy-code-btn {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border: 1px solid rgba(59, 130, 246, 0.4);
+  background: rgba(59, 130, 246, 0.15);
+  color: #dbeafe;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.copy-code-btn:hover {
+  background: rgba(59, 130, 246, 0.25);
+  border-color: rgba(59, 130, 246, 0.6);
+  transform: translateY(-2px);
+}
+
+.code-hint {
+  margin: 0;
+  font-size: 0.85rem;
+  color: #94a3b8;
+  font-style: italic;
 }
 </style>

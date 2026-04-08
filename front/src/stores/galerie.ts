@@ -25,6 +25,10 @@ export interface Galerie {
   photo_entete_id?: string | null;
   modeMiseEnPage?: string;
   mode_mise_en_page?: string;
+  codeAcces?: string | null;
+  code_acces?: string | null;
+  urlAcces?: string | null;
+  url_acces?: string | null;
   photos?: Photo[];
 }
 
