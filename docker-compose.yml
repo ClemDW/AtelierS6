@@ -92,6 +92,7 @@ services:
       - photopro.net
     depends_on:
       - galerie.db
+      - rabbitmq
     env_file: ./env/galeriedb.env
     command: "php -S 0.0.0.0:80 -t /var/php/public"
 

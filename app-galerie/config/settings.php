@@ -4,8 +4,10 @@ declare(strict_types=1);
 use Psr\Container\ContainerInterface;
 use photopro\core\application\ports\api\ServiceGalerieInterface;
 use photopro\core\application\ports\spi\GalerieRepositoryInterface;
+use photopro\core\application\ports\spi\GalerieEventPublisherInterface;
 use photopro\core\application\usecases\ServiceGalerie;
 use photopro\infra\GalerieRepository;
+use photopro\infra\messaging\GalerieEventPublisher;
 use photopro\api\actions\ListeGalerieAction;
 use photopro\api\actions\AfficherGalerieAction;
 use photopro\api\actions\AfficherGalerieCodeAction;
@@ -53,10 +55,31 @@ return [
     },
 
     // ==============================
+    // Publisher RabbitMQ
+    // ==============================
+    GalerieEventPublisher::class => function (): GalerieEventPublisher {
+        return new GalerieEventPublisher(
+            host:       getenv('RABBITMQ_HOST') ?: 'rabbitmq',
+            port:       (int) (getenv('RABBITMQ_PORT') ?: '5672'),
+            user:       getenv('RABBITMQ_USER') ?: 'photopro',
+            pass:       getenv('RABBITMQ_PASS') ?: 'photopro',
+            exchange:   'photopro.events',
+            routingKey: 'photopro.galerie'
+        );
+    },
+
+    GalerieEventPublisherInterface::class => function (ContainerInterface $c): GalerieEventPublisher {
+        return $c->get(GalerieEventPublisher::class);
+    },
+
+    // ==============================
     // Service
     // ==============================
     ServiceGalerieInterface::class => function (ContainerInterface $c): ServiceGalerie {
-        return new ServiceGalerie($c->get(GalerieRepository::class));
+        return new ServiceGalerie(
+            $c->get(GalerieRepository::class),
+            $c->get(GalerieEventPublisherInterface::class)
+        );
     },
 
     // ==============================

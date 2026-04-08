@@ -43,7 +43,7 @@ class GalerieRepository implements GalerieRepositoryInterface
 
     public function getGaleriesPublic(): array
     {
-        $stmt = $this->pdo->prepare('SELECT * FROM galerie WHERE type_galerie = :type_galerie');
+        $stmt = $this->pdo->prepare('SELECT * FROM galerie WHERE type_galerie = :type_galerie AND est_publiee = TRUE');
         $stmt->bindValue(':type_galerie', 'public', PDO::PARAM_STR);
         $stmt->execute();
         $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -296,9 +296,17 @@ class GalerieRepository implements GalerieRepositoryInterface
         // Suppression manuelle des dépendances car pas de ON DELETE CASCADE
         $this->pdo->prepare('DELETE FROM invitation WHERE galerie_id = :id')->execute(['id' => $id]);
         $this->pdo->prepare('DELETE FROM galerie_photo WHERE galerie_id = :id')->execute(['id' => $id]);
-        
+
         // Suppression de la galerie
         $stmt = $this->pdo->prepare('DELETE FROM galerie WHERE id = :id');
         $stmt->execute(['id' => $id]);
+    }
+
+    public function getPhotographeById(string $photographeId): ?array
+    {
+        $stmt = $this->pdo->prepare('SELECT nom, email_contact FROM photographe WHERE id = :id');
+        $stmt->execute(['id' => $photographeId]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        return $row !== false ? $row : null;
     }
 }
