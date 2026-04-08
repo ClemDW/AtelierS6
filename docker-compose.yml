@@ -3,6 +3,23 @@ networks:
     driver: bridge
 
 services:
+
+  front.nuxt:
+    build:
+      context: build
+      dockerfile: 8.4-cli.Dockerfile
+    working_dir: /app
+    ports:
+      - "${GATEWAY_FRONT_PORT:-6067}:3000"
+    volumes:
+      - ./front-nuxt:/app
+      - /app/node_modules
+    env_file:
+      - ./env/front-nuxt.env
+    networks:
+      - photopro.net
+    command: sh -c "npm install && npm run dev -- --host 0.0.0.0"
+
   front.photopro:
     build:
       context: build

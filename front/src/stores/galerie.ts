@@ -23,6 +23,8 @@ export interface Galerie {
   emails_clients?: string[];
   photoEnteteId?: string | null;
   photo_entete_id?: string | null;
+  modeMiseEnPage?: string;
+  mode_mise_en_page?: string;
   photos?: Photo[];
 }
 
@@ -258,6 +260,31 @@ export const useGalerieStore = defineStore("galerie", () => {
     }
   }
 
+  async function modifierMiseEnPage(galerieId: string, modeMiseEnPage: string) {
+    try {
+      const response = await authApi(`/galeries/${galerieId}/mise-en-page`, {
+        method: "PATCH",
+        body: { modeMiseEnPage },
+      });
+
+      if (currentGalerie.value && currentGalerie.value.id === galerieId) {
+        currentGalerie.value = {
+          ...currentGalerie.value,
+          modeMiseEnPage,
+          mode_mise_en_page: modeMiseEnPage,
+        };
+      }
+
+      return response;
+    } catch (error) {
+      console.error(
+        "Erreur : Impossible de modifier le mode de mise en page de la galerie",
+        error,
+      );
+      throw error;
+    }
+  }
+
   async function ajouterEmailClient(galerieId: string, email: string) {
     try {
       const response = await authApi(`/galeries/${galerieId}/invitations`, {
@@ -324,6 +351,7 @@ export const useGalerieStore = defineStore("galerie", () => {
     supprimerGalerie,
     modifierInfosGalerie,
     modifierPublicationGalerie,
+    modifierMiseEnPage,
     ajouterEmailClient,
     definirPhotoEntete,
   };

@@ -268,6 +268,7 @@ onMounted(() => {
             :key="photo.id"
             :photo="photo"
             fallback-src="/img-placeholder.svg"
+            variant="compact"
           />
         </div>
       </section>
@@ -473,6 +474,13 @@ onMounted(() => {
 
 .search-block {
   margin-bottom: 1rem;
+}
+
+.photos-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 0.8rem;
+  align-items: start;
 }
 
 .state {
