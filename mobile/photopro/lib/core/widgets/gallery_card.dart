@@ -19,9 +19,9 @@ class GalleryCard extends StatelessWidget {
           children: [
             AspectRatio(
               aspectRatio: 16 / 9,
-              child: galerie.url.isNotEmpty
+              child: galerie.photoEnteteUrl != null
                   ? CachedNetworkImage(
-                      imageUrl: galerie.url,
+                      imageUrl: galerie.photoEnteteUrl!,
                       fit: BoxFit.cover,
                       placeholder: (context, url) => Container(
                         color: const Color(0xFF21262D),
@@ -29,12 +29,12 @@ class GalleryCard extends StatelessWidget {
                       ),
                       errorWidget: (context, url, error) => Container(
                         color: const Color(0xFF21262D),
-                        child: const Icon(Icons.broken_image, size: 40),
+                        child: const Icon(Icons.broken_image, size: 40, color: Colors.white38),
                       ),
                     )
                   : Container(
                       color: const Color(0xFF21262D),
-                      child: const Icon(Icons.photo_library, size: 40),
+                      child: const Icon(Icons.photo_library, size: 40, color: Colors.white38),
                     ),
             ),
             Padding(
