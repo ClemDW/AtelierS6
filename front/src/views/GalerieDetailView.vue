@@ -354,10 +354,8 @@ watch(
           <p class="date">
             Créée le
             {{
-              galerieStore.currentGalerie.date_creation
-                ? new Date(
-                    galerieStore.currentGalerie.date_creation,
-                  ).toLocaleDateString("fr-FR")
+              galerieStore.currentGalerie?.dateCreation
+                ? new Date(galerieStore.currentGalerie.dateCreation).toLocaleDateString("fr-FR")
                 : "Date inconnue"
             }}
           </p>

@@ -25,7 +25,6 @@ function resolveCoverPhotoSrc(galerie: any) {
 }
 
 async function fetchMyGaleries() {
-  console.log("--- fetchMyGaleries START ---");
   if (!authStore.isAuthenticated) {
     console.log("Non authentifié, redirection vers login");
     router.push({ name: "login" });
@@ -54,7 +53,6 @@ async function fetchMyGaleries() {
     errorMessage.value = "Erreur lors du chargement des galeries.";
   } finally {
     isLoading.value = false;
-    console.log("--- fetchMyGaleries END ---");
   }
 }
 
