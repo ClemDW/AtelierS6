@@ -11,7 +11,8 @@ class ApiConfig {
   static const List<String> supportedImageMimeTypes = [
     'image/jpeg',
     'image/png',
-    'image/heic',
+    'image/webp',
+    'image/gif',
   ];
 
   static const double maxUploadSizeMo = 50.0;

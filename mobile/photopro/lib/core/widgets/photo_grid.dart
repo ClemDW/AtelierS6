@@ -43,7 +43,7 @@ class PhotoGrid extends StatelessWidget {
         return GestureDetector(
           onTap: () => onPhotoTap(index),
           child: CachedNetworkImage(
-            imageUrl: photo.cleS3,
+            imageUrl: photo.imageUrl,
             fit: BoxFit.cover,
             placeholder: (context, url) => Container(color: Colors.grey[200]),
             errorWidget: (context, url, error) => Container(

@@ -54,7 +54,7 @@ class _PhotoDetailScreenState extends State<PhotoDetailScreen> {
           return InteractiveViewer(
             child: Center(
               child: CachedNetworkImage(
-                imageUrl: photo.cleS3,
+                imageUrl: photo.imageUrl,
                 fit: BoxFit.contain,
                 placeholder: (context, url) =>
                     const Center(child: CircularProgressIndicator(color: Colors.white)),

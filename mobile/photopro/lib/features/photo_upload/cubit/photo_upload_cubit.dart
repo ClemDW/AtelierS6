@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:dio/dio.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:equatable/equatable.dart';
 import '../../../core/models/photo.dart';
@@ -38,6 +39,14 @@ class PhotoUploadCubit extends Cubit<PhotoUploadState> {
       emit(PhotoUploadSuccess(photo));
     } on UnsupportedFormatException catch (e) {
       emit(PhotoUploadFormatError(e.message));
+    } on DioException catch (e) {
+      if (e.response?.statusCode == 401) {
+        emit(const PhotoUploadError('Session expirée. Veuillez vous reconnecter.'));
+      } else {
+        emit(PhotoUploadError(
+          'Erreur lors de l\'upload (${e.response?.statusCode ?? "réseau"}). Réessayez.',
+        ));
+      }
     } catch (e) {
       emit(PhotoUploadError(
         'Erreur lors de l\'upload. Vérifiez votre connexion et réessayez.',

@@ -145,13 +145,6 @@ class _PhotoUploadView extends StatelessWidget {
             },
           ),
         ],
-        if (state is PhotoUploadSuccess) ...[
-          const SizedBox(height: 12),
-          OutlinedButton(
-            onPressed: () => context.read<PhotoUploadCubit>().reset(),
-            child: const Text('Ajouter une autre photo'),
-          ),
-        ],
       ],
     );
   }

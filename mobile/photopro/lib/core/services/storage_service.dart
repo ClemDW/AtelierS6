@@ -16,7 +16,7 @@ class StorageService {
     if (!ApiConfig.supportedImageMimeTypes.contains(mimeType)) {
       throw UnsupportedFormatException(
         'Format non supporté : ${file.path.split('.').last.toUpperCase()}. '
-        'Formats acceptés : JPEG, PNG, HEIC.',
+        'Formats acceptés : JPEG, PNG, WEBP, GIF.',
       );
     }
 
@@ -39,7 +39,17 @@ class StorageService {
       },
     );
 
-    return Photo.fromJson(response.data as Map<String, dynamic>);
+    final data = response.data as Map<String, dynamic>;
+    return Photo(
+      id: data['photo_id'] as String,
+      ownerId: photographeId,
+      mimeType: mimeType,
+      tailleMo: file.lengthSync() / 1024 / 1024,
+      nomOriginal: fileName,
+      cleS3: data['key'] as String,
+      titre: fileName,
+      dateUpload: DateTime.now().toIso8601String(),
+    );
   }
 
   String _detectMimeType(String path) {
@@ -50,8 +60,10 @@ class StorageService {
         return 'image/jpeg';
       case 'png':
         return 'image/png';
-      case 'heic':
-        return 'image/heic';
+      case 'webp':
+        return 'image/webp';
+      case 'gif':
+        return 'image/gif';
       default:
         return 'application/octet-stream';
     }

@@ -13,7 +13,7 @@ class HttpClient {
         baseUrl: ApiConfig.gatewayFrontBaseUrl,
         connectTimeout: ApiConfig.connectTimeout,
         receiveTimeout: ApiConfig.receiveTimeout,
-        headers: {'Content-Type': 'application/json'},
+        contentType: 'application/json',
       ),
     );
     return _dioFront!;
@@ -26,7 +26,7 @@ class HttpClient {
           baseUrl: ApiConfig.gatewayBackBaseUrl,
           connectTimeout: ApiConfig.connectTimeout,
           receiveTimeout: ApiConfig.receiveTimeout,
-          headers: {'Content-Type': 'application/json'},
+          contentType: 'application/json',
         ),
       );
       _dioBack!.interceptors.add(_JwtInterceptor(_storage, _dioBack!));
