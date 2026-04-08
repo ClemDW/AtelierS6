@@ -2,7 +2,8 @@
   <div>
     <!-- Vue initiale: Saisie du code d'accès -->
     <div v-if="!galeriePrivee">
-      <v-btn prepend-icon="mdi-arrow-left" variant="text" to="/" class="mb-4">
+<!-- On utilise `href` pour forcer le retour à l'accueil en mode classique -->
+      <v-btn prepend-icon="mdi-arrow-left" variant="text" href="/" class="mb-4">
         Retour à l'accueil
       </v-btn>
 

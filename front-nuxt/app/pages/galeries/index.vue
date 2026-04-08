@@ -6,7 +6,7 @@
         color="secondary"
         variant="elevated"
         prepend-icon="mdi-lock"
-        to="/privee"
+        href="/privee"
       >
         Rejoindre une galerie privée
       </v-btn>
@@ -42,7 +42,7 @@
             <v-btn
               color="primary"
               variant="text"
-              :to="`/galeries/${galerie.id}`"
+              :href="`/galeries/${galerie.id}`"
             >
               Voir la galerie
             </v-btn>
@@ -57,8 +57,9 @@
 <script setup>
 const config = useRuntimeConfig()
 
-// On utilise le proxy de Nitro qui fera l'appel interne vers GatewayFront
-const { data, error, pending } = await useFetch(`${config.public.apiBase}/galeries`, {
+// Récupération correcte: Serveur pointe vers GatewayDocker / Navigateur pointe sur Localhost
+const apiUrl = import.meta.client ? config.public.apiBase : config.apiBase
+const { data, error, pending } = await useFetch(`${apiUrl}/galeries`, {
   key: 'galeries-list'
 })
 
