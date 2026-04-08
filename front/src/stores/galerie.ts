@@ -58,14 +58,9 @@ export const useGalerieStore = defineStore("galerie", () => {
     onRequest({ options }) {
       const token = localStorage.getItem("auth_token");
       if (token) {
-        options.headers = {
-          ...options.headers,
-          Authorization: `Bearer ${token}`,
-        };
-        console.log(
-          "Sending token to CUSTOM back gateway:",
-          token.substring(0, 10) + "...",
-        );
+        const headers = new Headers(options.headers as HeadersInit);
+        headers.set("Authorization", `Bearer ${token}`);
+        options.headers = headers;
       } else {
         console.warn("No authentication token found in localStorage");
       }
