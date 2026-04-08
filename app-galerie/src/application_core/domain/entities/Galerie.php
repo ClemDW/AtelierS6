@@ -20,6 +20,7 @@ class Galerie
     private string $code_acces;
     private string $url;
     private array $photos;
+    private ?string $photo_entete_id;
 
     public function __construct(
         string $id,
@@ -34,7 +35,8 @@ class Galerie
         array $email_clients,
         string $code_acces,
         string $url,
-        array $photos
+        array $photos,
+        ?string $photo_entete_id = null
     ) {
         $this->id = $id;
         $this->photographeId = $photographeId;
@@ -49,6 +51,7 @@ class Galerie
         $this->code_acces = $code_acces;
         $this->url = $url;
         $this->photos = $photos;
+        $this->photo_entete_id = $photo_entete_id;
     }
 
     public function getId(): string
@@ -114,6 +117,11 @@ class Galerie
     public function getPhotos(): array
     {
         return $this->photos;
+    }
+
+    public function getPhotoEnteteId(): ?string
+    {
+        return $this->photo_entete_id;
     }
 
 }

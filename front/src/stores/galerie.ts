@@ -13,7 +13,16 @@ export interface Galerie {
   titre: string;
   description: string;
   dateCreation: string;
+  date_creation?: string;
   url: string;
+  estPubliee?: boolean;
+  est_publiee?: boolean;
+  photographeId?: string;
+  photographe_id?: string;
+  emailsClients?: string[];
+  emails_clients?: string[];
+  photoEnteteId?: string | null;
+  photo_entete_id?: string | null;
   photos?: Photo[];
 }
 
@@ -190,6 +199,118 @@ export const useGalerieStore = defineStore("galerie", () => {
     }
   }
 
+  async function modifierInfosGalerie(
+    galerieId: string,
+    data: { titre: string; description: string },
+  ) {
+    try {
+      const response = await authApi(`/galeries/${galerieId}`, {
+        method: "PATCH",
+        body: {
+          titre: data.titre,
+          description: data.description,
+        },
+      });
+
+      if (currentGalerie.value && currentGalerie.value.id === galerieId) {
+        currentGalerie.value = {
+          ...currentGalerie.value,
+          titre: data.titre,
+          description: data.description,
+        };
+      }
+
+      return response;
+    } catch (error) {
+      console.error(
+        "Erreur : Impossible de modifier les informations de la galerie",
+        error,
+      );
+      throw error;
+    }
+  }
+
+  async function modifierPublicationGalerie(
+    galerieId: string,
+    estPubliee: boolean,
+  ) {
+    try {
+      const response = await authApi(`/galeries/${galerieId}/publication`, {
+        method: "PATCH",
+        body: { estPubliee },
+      });
+
+      if (currentGalerie.value && currentGalerie.value.id === galerieId) {
+        currentGalerie.value = {
+          ...currentGalerie.value,
+          estPubliee,
+          est_publiee: estPubliee,
+        };
+      }
+
+      return response;
+    } catch (error) {
+      console.error(
+        "Erreur : Impossible de modifier la publication de la galerie",
+        error,
+      );
+      throw error;
+    }
+  }
+
+  async function ajouterEmailClient(galerieId: string, email: string) {
+    try {
+      const response = await authApi(`/galeries/${galerieId}/invitations`, {
+        method: "POST",
+        body: { email },
+      });
+
+      if (currentGalerie.value && currentGalerie.value.id === galerieId) {
+        const currentEmails =
+          currentGalerie.value.emailsClients ||
+          currentGalerie.value.emails_clients ||
+          [];
+        const normalized = email.trim().toLowerCase();
+        if (!currentEmails.includes(normalized)) {
+          currentGalerie.value = {
+            ...currentGalerie.value,
+            emailsClients: [...currentEmails, normalized],
+          };
+        }
+      }
+
+      return response;
+    } catch (error) {
+      console.error("Erreur : Impossible d'ajouter l'email client", error);
+      throw error;
+    }
+  }
+
+  async function definirPhotoEntete(galerieId: string, photoId: string | null) {
+    try {
+      const response = await authApi(`/galeries/${galerieId}/photo-entete`, {
+        method: "PATCH",
+        body: { photoId },
+      });
+
+      if (currentGalerie.value && currentGalerie.value.id === galerieId) {
+        currentGalerie.value = {
+          ...currentGalerie.value,
+          photoEnteteId: photoId,
+          photo_entete_id: photoId,
+        };
+      }
+
+      return response;
+    } catch (error) {
+      console.error(
+        "Erreur : Impossible de définir la photo d'entête de la galerie",
+        error,
+      );
+      throw error;
+    }
+  }
+
   return {
     galeriesPubliques,
     currentGalerie,
@@ -201,5 +322,9 @@ export const useGalerieStore = defineStore("galerie", () => {
     loadUserPhotos,
     ajouterPhotoToGalerie,
     supprimerGalerie,
+    modifierInfosGalerie,
+    modifierPublicationGalerie,
+    ajouterEmailClient,
+    definirPhotoEntete,
   };
 });
