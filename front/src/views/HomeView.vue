@@ -109,8 +109,11 @@ onMounted(() => {
     <main class="dashboard-content">
       <header class="page-header">
         <div class="header-info">
-          <h2>Welcome to your studio</h2>
-          <p>Manage your photos, galleries, and clients all from one place.</p>
+          <h2>Bienvenue dans votre studio</h2>
+          <p>
+            Gérez vos photos, vos galeries et vos clients depuis un seul
+            endroit.
+          </p>
         </div>
         <div class="header-actions">
           <RouterLink :to="{ name: 'my-galeries' }" class="secondary-btn">
