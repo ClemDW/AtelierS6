@@ -92,9 +92,9 @@ VALUES
 -- 3. Ajout de galeries (Publiques et Privées)
 INSERT INTO galerie (id, photographe_id, type_galerie, titre, description, date_publication, est_publiee, mode_mise_en_page)
 VALUES 
-('44444444-4444-4444-4444-444444444441', '11111111-1111-1111-1111-111111111111', 'public', 'Mariage au Château', 'Les photos du mariages.', CURRENT_TIMESTAMP, TRUE, 'mosaïque'),
-('44444444-4444-4444-4444-444444444442', '22222222-2222-2222-2222-222222222222', 'public', 'Voyage en Islande', 'Un froid glacial mais magnifique.', NULL, FALSE, 'liste'),
-('44444444-4444-4444-4444-444444444443', '11111111-1111-1111-1111-111111111111', 'privee', 'Tournoi de Foot U15', 'Photos des matchs', CURRENT_TIMESTAMP, TRUE, 'grille');
+('44444444-4444-4444-4444-444444444441', '11111111-1111-1111-1111-111111111111', 'public', 'Mariage au Château', 'Les photos du mariages.', CURRENT_TIMESTAMP, TRUE, 'slideshow'),
+('44444444-4444-4444-4444-444444444442', '22222222-2222-2222-2222-222222222222', 'public', 'Voyage en Islande', 'Un froid glacial mais magnifique.', NULL, FALSE, 'grille'),
+('44444444-4444-4444-4444-444444444443', '11111111-1111-1111-1111-111111111111', 'privee', 'Tournoi de Foot U15', 'Photos des matchs', CURRENT_TIMESTAMP, TRUE, 'slideshow');
 
 -- 4. Liaison Galeries <-> Photos
 INSERT INTO galerie_photo (galerie_id, photo_id)
