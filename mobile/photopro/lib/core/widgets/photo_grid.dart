@@ -45,9 +45,9 @@ class PhotoGrid extends StatelessWidget {
           child: CachedNetworkImage(
             imageUrl: photo.imageUrl,
             fit: BoxFit.cover,
-            placeholder: (context, url) => Container(color: Colors.grey[200]),
+            placeholder: (context, url) => Container(color: const Color(0xFF21262D)),
             errorWidget: (context, url, error) => Container(
-              color: Colors.grey[200],
+              color: const Color(0xFF21262D),
               child: const Icon(Icons.broken_image),
             ),
           ),

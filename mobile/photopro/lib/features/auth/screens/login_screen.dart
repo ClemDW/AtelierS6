@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import '../cubit/auth_cubit.dart';
+import '../../../core/widgets/photopro_logo.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -42,9 +43,16 @@ class _LoginScreenState extends State<LoginScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  const SizedBox(height: 32),
-                  const Icon(Icons.camera_alt, size: 80, color: Colors.grey),
-                  const SizedBox(height: 32),
+                  const SizedBox(height: 40),
+                  const Center(child: PhotoProLogo(fontSize: 40)),
+                  const SizedBox(height: 8),
+                  const Center(
+                    child: Text(
+                      'Espace photographe',
+                      style: TextStyle(color: Color(0xFF8B949E), fontSize: 14),
+                    ),
+                  ),
+                  const SizedBox(height: 40),
                   TextFormField(
                     controller: _emailController,
                     decoration: const InputDecoration(

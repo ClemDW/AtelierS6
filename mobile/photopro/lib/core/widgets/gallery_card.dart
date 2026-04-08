@@ -24,16 +24,16 @@ class GalleryCard extends StatelessWidget {
                       imageUrl: galerie.url,
                       fit: BoxFit.cover,
                       placeholder: (context, url) => Container(
-                        color: Colors.grey[200],
+                        color: const Color(0xFF21262D),
                         child: const Center(child: CircularProgressIndicator()),
                       ),
                       errorWidget: (context, url, error) => Container(
-                        color: Colors.grey[200],
+                        color: const Color(0xFF21262D),
                         child: const Icon(Icons.broken_image, size: 40),
                       ),
                     )
                   : Container(
-                      color: Colors.grey[200],
+                      color: const Color(0xFF21262D),
                       child: const Icon(Icons.photo_library, size: 40),
                     ),
             ),
@@ -52,7 +52,7 @@ class GalleryCard extends StatelessWidget {
                   Text(
                     galerie.photographeId,
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: Colors.grey[600],
+                          color: const Color(0xFF8B949E),
                         ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,

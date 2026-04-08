@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import '../cubit/gallery_list_cubit.dart';
 import '../../../core/widgets/gallery_card.dart';
+import '../../../core/widgets/photopro_logo.dart';
 import '../../../core/services/secure_storage_service.dart';
 
 class GalleryListScreen extends StatefulWidget {
@@ -43,7 +44,7 @@ class _GalleryListScreenState extends State<GalleryListScreen> with RouteAware {
       child: Builder(
         builder: (context) => Scaffold(
           appBar: AppBar(
-            title: const Text('PhotoPro'),
+            title: const PhotoProLogo(fontSize: 22),
             actions: [
               IconButton(
                 icon: const Icon(Icons.refresh),

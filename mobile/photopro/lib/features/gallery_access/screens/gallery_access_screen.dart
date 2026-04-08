@@ -54,7 +54,7 @@ class _GalleryAccessScreenState extends State<GalleryAccessScreen> {
                       border: OutlineInputBorder(),
                       prefixIcon: Icon(Icons.vpn_key),
                     ),
-                    textCapitalization: TextCapitalization.characters,
+                    textCapitalization: TextCapitalization.none,
                     validator: (v) =>
                         (v == null || v.trim().isEmpty) ? 'Veuillez saisir un code' : null,
                   ),
