@@ -3,6 +3,8 @@ import { computed, ref, onMounted, watch } from "vue";
 import { useRouter, useRoute } from "vue-router";
 import { useAuthStore } from "../stores/auth";
 import { useGalerieStore, type Galerie, type Photo } from "../stores/galerie";
+import PhotoSearchField from "../components/PhotoSearchField.vue";
+import PhotoThumbnailCard from "../components/PhotoThumbnailCard.vue";
 
 const router = useRouter();
 const route = useRoute();
@@ -18,6 +20,7 @@ const isSavingPublication = ref(false);
 
 const photoFallback = "/img-placeholder.svg";
 const stockPhotos = ref<Photo[]>([]);
+const stockSearchQuery = ref("");
 const stockLoading = ref(false);
 const infosSaveDebounce = ref<ReturnType<typeof setTimeout> | null>(null);
 const newClientEmail = ref("");
@@ -37,6 +40,18 @@ const invitedEmails = computed(() => {
 const currentCoverPhotoId = computed(() => {
   const galerie = galerieStore.currentGalerie as any;
   return galerie?.photoEnteteId || galerie?.photo_entete_id || null;
+});
+
+const filteredStockPhotos = computed(() => {
+  const query = stockSearchQuery.value.trim().toLowerCase();
+  if (!query) return stockPhotos.value;
+
+  return stockPhotos.value.filter((photo: any) => {
+    const title = String(
+      photo?.titre || photo?.nom_original || "",
+    ).toLowerCase();
+    return title.includes(query);
+  });
 });
 
 const isOwner = computed(() => {
@@ -445,10 +460,19 @@ watch(
 
           <div v-if="authStore.user" class="stock-container">
             <div class="stock-header">
-              <h2>Stock photo</h2>
-              <p>
-                Photos déjà uploadées, prêtes à être ajoutées à une galerie.
-              </p>
+              <div>
+                <h2>Stock photo</h2>
+                <p>
+                  Photos déjà uploadées, prêtes à être ajoutées à une galerie.
+                </p>
+              </div>
+              <PhotoSearchField
+                v-model="stockSearchQuery"
+                id="stock-search"
+                label="Rechercher par titre"
+                placeholder="Ex: portrait, mer, famille..."
+                class="stock-search"
+              />
             </div>
 
             <div v-if="stockLoading" class="no-photos">
@@ -461,38 +485,40 @@ watch(
               <p>Aucune photo dans le stock pour le moment.</p>
             </div>
 
+            <div v-else-if="filteredStockPhotos.length === 0" class="no-photos">
+              <div class="empty-icon">🔎</div>
+              <p>Aucune photo ne correspond à votre recherche.</p>
+            </div>
+
             <div v-else class="stock-grid">
-              <div
-                v-for="photo in stockPhotos"
+              <PhotoThumbnailCard
+                v-for="photo in filteredStockPhotos"
                 :key="photo.id"
-                class="photo-item stock-photo-item"
+                :photo="photo"
+                :show-title="true"
+                class="stock-photo-card"
               >
-                <img
-                  :src="resolvePhotoSrc(photo)"
-                  :alt="photo.titre || 'Photo du stock'"
-                  loading="lazy"
-                />
-                <div class="stock-actions">
+                <template #actions="{ photo: stockPhoto }">
                   <button
                     class="cover-stock-btn"
-                    :class="{ selected: currentCoverPhotoId === photo.id }"
+                    :class="{ selected: currentCoverPhotoId === stockPhoto.id }"
                     :disabled="isSavingCoverPhoto"
-                    @click="choisirPhotoEntete(photo.id)"
+                    @click="choisirPhotoEntete(stockPhoto.id)"
                   >
                     {{
-                      currentCoverPhotoId === photo.id
+                      currentCoverPhotoId === stockPhoto.id
                         ? "Photo d'entête"
                         : "Choisir comme entête"
                     }}
                   </button>
                   <button
                     class="add-stock-btn"
-                    @click="addStockPhotoToGalerie(photo.id)"
+                    @click="addStockPhotoToGalerie(stockPhoto.id)"
                   >
                     Ajouter à cette galerie
                   </button>
-                </div>
-              </div>
+                </template>
+              </PhotoThumbnailCard>
             </div>
           </div>
         </div>
@@ -888,6 +914,10 @@ watch(
   color: #9ca3af;
 }
 
+.stock-search {
+  min-width: 260px;
+}
+
 .stock-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
@@ -948,17 +978,6 @@ watch(
   width: 100%;
   height: auto;
   display: block;
-  object-fit: cover;
-}
-
-.stock-photo-item {
-  display: flex;
-  flex-direction: column;
-}
-
-.stock-photo-item img {
-  width: 100%;
-  height: 110px;
   object-fit: cover;
 }
 
