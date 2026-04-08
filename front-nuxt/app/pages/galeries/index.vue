@@ -22,8 +22,8 @@
         <v-card class="mx-auto" max-width="400">
           <!-- Si la galerie a une image de couverture, on l'affiche avec v-img pour le SSR -->
           <v-img
-            v-if="galerie.cover_image"
-            :src="getImageUrl(galerie.cover_image)"
+            v-if="galerie.photo_entete_id"
+            :src="getImageUrl(galerie.photo_entete_id)"
             height="200px"
             cover
           ></v-img>
@@ -31,7 +31,7 @@
           <v-card-title>{{ galerie.titre }}</v-card-title>
           
           <v-card-subtitle>
-            Créée en {{ new Date(galerie.dateCreation).getFullYear() }}
+            Créée en {{ new Date(galerie.date_creation).getFullYear() }}
           </v-card-subtitle>
           
           <v-card-text>
