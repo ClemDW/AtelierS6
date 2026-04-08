@@ -9,6 +9,13 @@
     "src/**/__tests__/*"
   ],
   "compilerOptions": {
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "types": [
+      "vite/client",
+      "vue",
+      "vue-router"
+    ],
     // Extra safety for array and object lookups, but may have false positives.
     "noUncheckedIndexedAccess": true,
     // Path mapping for cleaner imports.
