@@ -69,7 +69,8 @@ class GalerieRepository implements GalerieRepositoryInterface
                 $emails_clients,
                 $row['code_acces'] ?? '',
                 $row['url_acces'] ?? '',
-                $photos
+                $photos,
+                $row['photo_entete_id'] ?? null
             );
         }
         return $galeries;
@@ -102,7 +103,8 @@ class GalerieRepository implements GalerieRepositoryInterface
                 $emails_clients,
                 $row['code_acces'] ?? '',
                 $row['url_acces'] ?? '',
-                $photos
+                $photos,
+                $row['photo_entete_id'] ?? null
             );
         }
         return $galeries;
@@ -134,7 +136,8 @@ class GalerieRepository implements GalerieRepositoryInterface
                 $emails_clients,
                 $row['code_acces'] ?? '',
                 $row['url_acces'] ?? '',
-                $photos
+                $photos,
+                $row['photo_entete_id'] ?? null
             );
         } else {
             return null;
@@ -145,8 +148,8 @@ class GalerieRepository implements GalerieRepositoryInterface
     public function creerGalerie(Galerie $galerie): Galerie
     {
         $stmt = $this->pdo->prepare(
-            'INSERT INTO galerie (id, photographe_id, type_galerie, titre, description, date_creation, date_publication, est_publiee, mode_mise_en_page, code_acces, url_acces)
-             VALUES (:id, :photographe_id, :type_galerie, :titre, :description, :date_creation, :date_publication, :est_publiee, :mode_mise_en_page, :code_acces, :url_acces)'
+              'INSERT INTO galerie (id, photographe_id, type_galerie, titre, description, date_creation, date_publication, est_publiee, mode_mise_en_page, code_acces, url_acces, photo_entete_id)
+               VALUES (:id, :photographe_id, :type_galerie, :titre, :description, :date_creation, :date_publication, :est_publiee, :mode_mise_en_page, :code_acces, :url_acces, :photo_entete_id)'
         );
         $stmt->execute([
             'id'               => $galerie->getId(),
@@ -160,6 +163,7 @@ class GalerieRepository implements GalerieRepositoryInterface
             'mode_mise_en_page'=> $galerie->getMiseEnPage(),
             'code_acces'       => $galerie->getCodeAcces() ?: null,
             'url_acces' => $galerie->getUrl() ?: null,
+            'photo_entete_id'  => $galerie->getPhotoEnteteId(),
         ]);
 
         foreach ($galerie->getEmailsClients() as $email) {
@@ -213,7 +217,8 @@ class GalerieRepository implements GalerieRepositoryInterface
                 $emails_clients,
                 $row['code_acces'] ?? '',
                 $row['url_acces'] ?? '',
-                $photos
+                $photos,
+                $row['photo_entete_id'] ?? null
             );
         }else {
             return null;
@@ -243,6 +248,41 @@ class GalerieRepository implements GalerieRepositoryInterface
     {
         $stmt = $this->pdo->prepare('UPDATE galerie SET est_publiee = FALSE, date_publication = NULL WHERE id = :id');
         $stmt->execute(['id' => $galerieId]);
+    }
+
+    public function ajouterEmailClient(string $galerieId, string $email): void
+    {
+        $stmtNextId = $this->pdo->query('SELECT COALESCE(MAX(id), 0) + 1 FROM invitation');
+        $nextId = (int) $stmtNextId->fetchColumn();
+
+        $stmt = $this->pdo->prepare(
+            'INSERT INTO invitation (id, galerie_id, email) VALUES (:id, :galerie_id, :email)
+             ON CONFLICT (galerie_id, email) DO NOTHING'
+        );
+        $stmt->execute([
+            'id' => $nextId,
+            'galerie_id' => $galerieId,
+            'email' => strtolower(trim($email)),
+        ]);
+    }
+
+    public function definirPhotoEntete(string $galerieId, ?string $photoId): void
+    {
+        $stmt = $this->pdo->prepare('UPDATE galerie SET photo_entete_id = :photo_entete_id WHERE id = :id');
+        $stmt->execute([
+            'id' => $galerieId,
+            'photo_entete_id' => $photoId,
+        ]);
+    }
+
+    public function modifierInfosGalerie(string $galerieId, string $titre, string $description): void
+    {
+        $stmt = $this->pdo->prepare('UPDATE galerie SET titre = :titre, description = :description WHERE id = :id');
+        $stmt->execute([
+            'id' => $galerieId,
+            'titre' => $titre,
+            'description' => $description,
+        ]);
     }
 
     public function modifierMiseEnPage(string $galerieId, string $miseEnPage): void

@@ -21,5 +21,11 @@ interface ServiceGalerieInterface
     public function publierGalerie(string $galerieId): void;
     public function depublierGalerie(string $galerieId): void;
     /** @throws GalerieNotFoundException */
+    public function ajouterEmailClient(string $galerieId, string $email): void;
+    /** @throws GalerieNotFoundException */
+    public function definirPhotoEntete(string $galerieId, ?string $photoId): void;
+    /** @throws GalerieNotFoundException */
+    public function modifierInfosGalerie(string $galerieId, string $titre, string $description): void;
+    /** @throws GalerieNotFoundException */
     public function modifierMiseEnPage(string $galerieId, string $miseEnPage): void;
 }

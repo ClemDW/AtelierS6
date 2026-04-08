@@ -8,7 +8,7 @@ use photopro\core\domain\exceptions\GalerieNotFoundException;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 
-class ModifierPublicationGalerieAction
+class AjouterEmailClientAction
 {
     private ServiceGalerieInterface $serviceGalerie;
 
@@ -21,36 +21,24 @@ class ModifierPublicationGalerieAction
     {
         $id = $args['id'];
         $body = $request->getParsedBody() ?? [];
+        $email = strtolower(trim((string) ($body['email'] ?? '')));
 
-        if (!isset($body['estPubliee'])) {
-            $response->getBody()->write(json_encode(['error' => 'Champ manquant : estPubliee']));
+        if ($email === '' || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            $response->getBody()->write(json_encode(['error' => 'Adresse email invalide']));
             return $response->withHeader('Content-Type', 'application/json')->withStatus(400);
         }
 
-        $rawEstPubliee = $body['estPubliee'];
-        if (is_bool($rawEstPubliee)) {
-            $estPubliee = $rawEstPubliee;
-        } elseif (is_int($rawEstPubliee) || is_float($rawEstPubliee)) {
-            $estPubliee = (int) $rawEstPubliee === 1;
-        } elseif (is_string($rawEstPubliee)) {
-            $normalized = strtolower(trim($rawEstPubliee));
-            $estPubliee = in_array($normalized, ['1', 'true', 'yes', 'oui'], true);
-        } else {
-            $estPubliee = false;
-        }
-
         try {
-            if ($estPubliee) {
-                $this->serviceGalerie->publierGalerie($id);
-            } else {
-                $this->serviceGalerie->depublierGalerie($id);
-            }
+            $this->serviceGalerie->ajouterEmailClient($id, $email);
         } catch (GalerieNotFoundException $e) {
             $response->getBody()->write(json_encode(['error' => $e->getMessage()]));
             return $response->withHeader('Content-Type', 'application/json')->withStatus(404);
         }
 
-        $response->getBody()->write(json_encode(['estPubliee' => $estPubliee]));
+        $response->getBody()->write(json_encode([
+            'id' => $id,
+            'email' => $email,
+        ]));
         return $response->withHeader('Content-Type', 'application/json')->withStatus(200);
     }
 }

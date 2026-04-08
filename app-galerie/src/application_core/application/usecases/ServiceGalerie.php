@@ -43,7 +43,8 @@ class ServiceGalerie implements ServiceGalerieInterface
                 $galerie->getDateCreation(),
                 $galerie->getType(),
                 $galerie->isPublic(),
-                $galerie->getUrl()
+                $galerie->getUrl(),
+                $galerie->getPhotoEnteteId()
             );
         }
         return $galeries;
@@ -61,7 +62,8 @@ class ServiceGalerie implements ServiceGalerieInterface
                 $galerie->getDateCreation(),
                 $galerie->getType(),
                 $galerie->isPublic(),
-                $galerie->getUrl()
+                $galerie->getUrl(),
+                $galerie->getPhotoEnteteId()
             );
         }
         return $galeries;
@@ -86,7 +88,8 @@ class ServiceGalerie implements ServiceGalerieInterface
             $galerie->getCodeAcces(),
             $galerie->getUrl(),
             $galerie->getPhotos(),
-            $galerie->getEmailsClients()
+            $galerie->getEmailsClients(),
+            $galerie->getPhotoEnteteId()
         );
     }
 
@@ -106,7 +109,8 @@ class ServiceGalerie implements ServiceGalerieInterface
             $galerie->getCodeAcces(),
             $galerie->getUrl(),
             $galerie->getPhotos(),
-            $galerie->getEmailsClients()
+            $galerie->getEmailsClients(),
+            $galerie->getPhotoEnteteId()
         );
     }
 
@@ -135,6 +139,24 @@ class ServiceGalerie implements ServiceGalerieInterface
     {
         $this->getGalerieOuException($galerieId);
         $this->galerieRepository->depublierGalerie($galerieId);
+    }
+
+    public function ajouterEmailClient(string $galerieId, string $email): void
+    {
+        $this->getGalerieOuException($galerieId);
+        $this->galerieRepository->ajouterEmailClient($galerieId, $email);
+    }
+
+    public function definirPhotoEntete(string $galerieId, ?string $photoId): void
+    {
+        $this->getGalerieOuException($galerieId);
+        $this->galerieRepository->definirPhotoEntete($galerieId, $photoId);
+    }
+
+    public function modifierInfosGalerie(string $galerieId, string $titre, string $description): void
+    {
+        $this->getGalerieOuException($galerieId);
+        $this->galerieRepository->modifierInfosGalerie($galerieId, $titre, $description);
     }
 
     public function modifierMiseEnPage(string $galerieId, string $miseEnPage): void
@@ -170,7 +192,8 @@ class ServiceGalerie implements ServiceGalerieInterface
             $dto->emailsClients,
             $codeAcces,
             $url,
-            $dto->photos
+            $dto->photos,
+            null
         );
 
         $galerieCreee = $this->galerieRepository->creerGalerie($galerie, $dto->emailsClients);
@@ -188,7 +211,8 @@ class ServiceGalerie implements ServiceGalerieInterface
             $galerieCreee->getCodeAcces(),
             $galerieCreee->getUrl(),
             $galerieCreee->getPhotos(),
-            $galerieCreee->getEmailsClients()
+            $galerieCreee->getEmailsClients(),
+            $galerieCreee->getPhotoEnteteId()
         );
     }
 }

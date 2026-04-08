@@ -17,9 +17,34 @@ const uploadSuccessCount = ref(0);
 const photos = ref<Photo[]>([]);
 const errorMessage = ref("");
 const pendingUploads = ref<Array<{ file: File; titre: string }>>([]);
+const fileInput = ref<HTMLInputElement | null>(null);
 
 const titleFromFileName = (fileName: string) => {
   return fileName.trim();
+};
+
+const isImageFile = (file: File) => file.type.startsWith("image/");
+
+const appendFiles = (files: File[]) => {
+  const validFiles = files.filter(isImageFile);
+  const existingKeys = new Set(
+    pendingUploads.value.map(
+      (item: { file: File; titre: string }) =>
+        `${item.file.name}:${item.file.size}:${item.file.lastModified}`,
+    ),
+  );
+
+  const newItems = validFiles
+    .filter(
+      (file) =>
+        !existingKeys.has(`${file.name}:${file.size}:${file.lastModified}`),
+    )
+    .map((file) => ({
+      file,
+      titre: titleFromFileName(file.name),
+    }));
+
+  pendingUploads.value = [...pendingUploads.value, ...newItems];
 };
 
 const resolvePhotoSrc = (photo: any) => {
@@ -53,10 +78,7 @@ const loadMyPhotos = async () => {
 };
 
 const queueFiles = (files: File[]) => {
-  pendingUploads.value = files.map((file) => ({
-    file,
-    titre: titleFromFileName(file.name),
-  }));
+  appendFiles(files);
 };
 
 const processPendingUploads = async () => {
@@ -103,6 +125,10 @@ const handleDrop = (e: DragEvent) => {
   }
 };
 
+const openFilePicker = () => {
+  fileInput.value?.click();
+};
+
 const handleLogout = () => {
   authStore.logout();
   router.push({ name: "login" });
@@ -144,7 +170,7 @@ onMounted(() => {
           @dragover.prevent="isDragging = true"
           @dragleave.prevent="isDragging = false"
           @drop.prevent="handleDrop"
-          @click="($refs.fileInput as HTMLInputElement)?.click()"
+          @click="openFilePicker"
         >
           <div class="dropzone-content">
             <strong v-if="!isUploading">Uploader de nouvelles photos</strong>
@@ -155,6 +181,14 @@ onMounted(() => {
             <span v-else
               >{{ uploadSuccessCount }} / {{ uploadTotal }} fichiers</span
             >
+            <button
+              type="button"
+              class="picker-btn"
+              @click.stop="openFilePicker"
+              :disabled="isUploading"
+            >
+              Choisir plusieurs photos
+            </button>
           </div>
           <div v-if="isUploading" class="progress-bar">
             <div
@@ -320,6 +354,7 @@ onMounted(() => {
   display: flex;
   flex-direction: column;
   gap: 0.4rem;
+  align-items: center;
 }
 
 .dropzone-content span {
@@ -342,6 +377,22 @@ onMounted(() => {
 
 .hidden-input {
   display: none;
+}
+
+.picker-btn {
+  margin-top: 0.5rem;
+  border: 1px solid rgba(59, 130, 246, 0.45);
+  background: rgba(59, 130, 246, 0.18);
+  color: #dbeafe;
+  border-radius: 999px;
+  padding: 0.55rem 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.picker-btn:disabled {
+  opacity: 0.7;
+  cursor: wait;
 }
 
 .pending-panel {

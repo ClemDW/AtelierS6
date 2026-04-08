@@ -35,6 +35,7 @@ CREATE TABLE galerie (
     date_publication TIMESTAMP,        -- Reste NULL tant que ce n'est pas publié
     est_publiee BOOLEAN DEFAULT FALSE,
     mode_mise_en_page VARCHAR(100),
+    photo_entete_id UUID DEFAULT NULL REFERENCES photo(id) ON DELETE SET NULL,
 
     -- Pour les galeries privés
     code_acces VARCHAR(100),

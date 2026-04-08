@@ -18,6 +18,7 @@ class GalerieAfficheDTO
     public string $url;
     public array $photos;
     public array $emailsClients;
+    public ?string $photoEnteteId;
 
     public function __construct(
         string $id,
@@ -32,7 +33,8 @@ class GalerieAfficheDTO
         string $codeAcces,
         string $url,
         array $photos,
-        array $emailsClients
+        array $emailsClients,
+        ?string $photoEnteteId = null
     ) {
         $this->id = $id;
         $this->photographeId = $photographeId;
@@ -47,5 +49,6 @@ class GalerieAfficheDTO
         $this->url = $url;
         $this->photos = $photos;
         $this->emailsClients = $emailsClients;
+        $this->photoEnteteId = $photoEnteteId;
     }
 }

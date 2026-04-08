@@ -12,6 +12,17 @@ const myGaleries = ref<any[]>([]);
 const isLoading = ref(false);
 const isUserLoading = ref(true);
 const errorMessage = ref("");
+const photoFallback = "/img-placeholder.svg";
+
+function resolveCoverPhotoSrc(galerie: any) {
+  const coverId = galerie.photo_entete_id || galerie.photoEnteteId;
+  if (!coverId) return photoFallback;
+
+  const photoBase =
+    import.meta.env.VITE_STORAGE_PHOTO_URL ||
+    `${import.meta.env.VITE_API_BACK_URL || "http://localhost:6081/api/back"}/storage/photos`;
+  return `${photoBase}/${coverId}`;
+}
 
 async function fetchMyGaleries() {
   console.log("--- fetchMyGaleries START ---");
@@ -173,7 +184,12 @@ onMounted(() => {
           "
         >
           <div class="card-image">
-            <div class="placeholder-pattern"></div>
+            <img
+              :src="resolveCoverPhotoSrc(galerie)"
+              :alt="`Photo d'entête de ${galerie.titre}`"
+              class="cover-image"
+              loading="lazy"
+            />
             <div class="badges">
               <span
                 class="badge"
@@ -411,6 +427,13 @@ onMounted(() => {
   background: #1e293b;
   position: relative;
   overflow: hidden;
+}
+
+.cover-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
 }
 
 .placeholder-pattern {

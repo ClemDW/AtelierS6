@@ -12,6 +12,7 @@ class GaleriesListeDTO
     public string $type_galerie;
     public bool $est_publiee;
     public string $url;
+    public ?string $photo_entete_id;
 
     public function __construct(
         string $id,
@@ -20,7 +21,8 @@ class GaleriesListeDTO
         string $date_creation,
         string $type_galerie,
         bool $est_publiee,
-        string $url
+        string $url,
+        ?string $photo_entete_id = null
     ) {
         $this->id = $id;
         $this->titre = $titre;
@@ -29,5 +31,6 @@ class GaleriesListeDTO
         $this->type_galerie = $type_galerie;
         $this->est_publiee = $est_publiee;
         $this->url = $url;
+        $this->photo_entete_id = $photo_entete_id;
     }
 }

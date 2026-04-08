@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { ref, onMounted } from "vue";
+import { computed, ref, onMounted, watch } from "vue";
 import { useRouter, useRoute } from "vue-router";
 import { useAuthStore } from "../stores/auth";
-import { useGalerieStore, type Photo } from "../stores/galerie";
+import { useGalerieStore, type Galerie, type Photo } from "../stores/galerie";
 
 const router = useRouter();
 const route = useRoute();
@@ -11,10 +11,64 @@ const galerieStore = useGalerieStore();
 
 const isLoading = ref(true);
 const errorMessage = ref("");
+const saveError = ref("");
+const saveSuccess = ref("");
+const isSavingInfos = ref(false);
+const isSavingPublication = ref(false);
 
 const photoFallback = "/img-placeholder.svg";
 const stockPhotos = ref<Photo[]>([]);
 const stockLoading = ref(false);
+const infosSaveDebounce = ref<ReturnType<typeof setTimeout> | null>(null);
+const newClientEmail = ref("");
+const isAddingClientEmail = ref(false);
+const isSavingCoverPhoto = ref(false);
+const editForm = ref({
+  titre: "",
+  description: "",
+  estPubliee: false,
+});
+
+const invitedEmails = computed(() => {
+  const galerie = galerieStore.currentGalerie as any;
+  return galerie?.emailsClients || galerie?.emails_clients || [];
+});
+
+const currentCoverPhotoId = computed(() => {
+  const galerie = galerieStore.currentGalerie as any;
+  return galerie?.photoEnteteId || galerie?.photo_entete_id || null;
+});
+
+const isOwner = computed(() => {
+  const galerie = galerieStore.currentGalerie as any;
+  const ownerId = galerie?.photographe_id || galerie?.photographeId;
+  return Boolean(authStore.user && ownerId && ownerId === authStore.user.id);
+});
+
+const toPublicationBool = (value: unknown): boolean => {
+  if (typeof value === "boolean") return value;
+  if (typeof value === "number") return value === 1;
+  if (typeof value === "string") {
+    const normalized = value.trim().toLowerCase();
+    return ["1", "true", "oui", "yes"].includes(normalized);
+  }
+  return false;
+};
+
+const getPublicationValue = (galerie: any): boolean => {
+  const rawValue = galerie?.estPubliee ?? galerie?.est_publiee;
+  return toPublicationBool(rawValue);
+};
+
+const syncEditForm = () => {
+  const galerie = galerieStore.currentGalerie as any;
+  if (!galerie) return;
+  editForm.value = {
+    titre: galerie.titre || "",
+    description: galerie.description || "",
+    estPubliee: getPublicationValue(galerie),
+  };
+};
 
 const resolvePhotoSrc = (photo: any) => {
   if (photo?.url) return photo.url;
@@ -60,6 +114,107 @@ const fetchGalerieContent = async () => {
   }
 };
 
+const saveGalerieInfos = async () => {
+  const galerie = galerieStore.currentGalerie;
+  if (!galerie) return;
+
+  const titre = editForm.value.titre.trim();
+  const description = editForm.value.description.trim();
+
+  if (!titre) {
+    saveError.value = "Le nom de la galerie est obligatoire.";
+    saveSuccess.value = "";
+    return;
+  }
+
+  const titreActuel = (galerie.titre || "").trim();
+  const descriptionActuelle = (galerie.description || "").trim();
+  if (titre === titreActuel && description === descriptionActuelle) {
+    return;
+  }
+
+  saveError.value = "";
+  saveSuccess.value = "";
+  isSavingInfos.value = true;
+
+  try {
+    await galerieStore.modifierInfosGalerie(galerie.id, {
+      titre,
+      description,
+    });
+    saveSuccess.value = "Nom et description enregistrés.";
+  } catch (error) {
+    saveError.value = "Impossible d'enregistrer le nom/la description.";
+  } finally {
+    isSavingInfos.value = false;
+  }
+};
+
+const handlePublicationToggle = async () => {
+  const galerie = galerieStore.currentGalerie;
+  if (!galerie) return;
+
+  const nouvelleValeur = editForm.value.estPubliee;
+  saveError.value = "";
+  saveSuccess.value = "";
+  isSavingPublication.value = true;
+
+  try {
+    await galerieStore.modifierPublicationGalerie(galerie.id, nouvelleValeur);
+    saveSuccess.value = nouvelleValeur
+      ? "Galerie publiée."
+      : "Galerie dépubliée.";
+  } catch (error) {
+    editForm.value.estPubliee = !nouvelleValeur;
+    saveError.value = "Impossible de modifier la publication.";
+  } finally {
+    isSavingPublication.value = false;
+  }
+};
+
+const addClientAccess = async () => {
+  const galerie = galerieStore.currentGalerie;
+  if (!galerie) return;
+
+  const email = newClientEmail.value.trim().toLowerCase();
+  if (!email) {
+    saveError.value = "Veuillez renseigner une adresse email client.";
+    return;
+  }
+
+  isAddingClientEmail.value = true;
+  saveError.value = "";
+  saveSuccess.value = "";
+  try {
+    await galerieStore.ajouterEmailClient(galerie.id, email);
+    await fetchGalerieContent();
+    newClientEmail.value = "";
+    saveSuccess.value = "Accès client ajouté.";
+  } catch (error) {
+    saveError.value = "Impossible d'ajouter cet email client.";
+  } finally {
+    isAddingClientEmail.value = false;
+  }
+};
+
+const choisirPhotoEntete = async (photoId: string) => {
+  const galerie = galerieStore.currentGalerie;
+  if (!galerie) return;
+
+  isSavingCoverPhoto.value = true;
+  saveError.value = "";
+  saveSuccess.value = "";
+  try {
+    await galerieStore.definirPhotoEntete(galerie.id, photoId);
+    await fetchGalerieContent();
+    saveSuccess.value = "Photo d'entête enregistrée.";
+  } catch (error) {
+    saveError.value = "Impossible de définir la photo d'entête.";
+  } finally {
+    isSavingCoverPhoto.value = false;
+  }
+};
+
 const addStockPhotoToGalerie = async (photoId: string) => {
   const galerieId = galerieStore.currentGalerie?.id;
   if (!galerieId) return;
@@ -94,6 +249,31 @@ onMounted(() => {
   fetchGalerieContent();
   refreshStockPhotos();
 });
+
+watch(
+  () => galerieStore.currentGalerie,
+  (galerie: Galerie | null) => {
+    if (galerie) {
+      syncEditForm();
+    }
+  },
+  { immediate: true },
+);
+
+watch(
+  () => [editForm.value.titre, editForm.value.description],
+  () => {
+    if (!isOwner.value) return;
+
+    if (infosSaveDebounce.value) {
+      clearTimeout(infosSaveDebounce.value);
+    }
+
+    infosSaveDebounce.value = setTimeout(() => {
+      saveGalerieInfos();
+    }, 700);
+  },
+);
 </script>
 
 <template>
@@ -130,11 +310,7 @@ onMounted(() => {
           <div class="title-with-actions">
             <h1>{{ galerieStore.currentGalerie.titre }}</h1>
             <button
-              v-if="
-                authStore.user &&
-                (galerieStore.currentGalerie as any).photographe_id ===
-                  authStore.user.id
-              "
+              v-if="isOwner"
               @click="handleDelete"
               class="delete-btn-main"
               title="Supprimer cette galerie"
@@ -170,8 +346,98 @@ onMounted(() => {
                 : "Date inconnue"
             }}
           </p>
+
+          <div v-if="isOwner" class="edit-panel">
+            <h2>Modifier la galerie</h2>
+            <label class="field-label" for="galerie-title">Nom</label>
+            <input
+              id="galerie-title"
+              v-model="editForm.titre"
+              @blur="saveGalerieInfos"
+              class="edit-input"
+              type="text"
+              placeholder="Nom de la galerie"
+            />
+
+            <label class="field-label" for="galerie-description"
+              >Description</label
+            >
+            <textarea
+              id="galerie-description"
+              v-model="editForm.description"
+              @blur="saveGalerieInfos"
+              class="edit-textarea"
+              rows="4"
+              placeholder="Décrivez cette galerie"
+            ></textarea>
+
+            <div class="publish-row">
+              <span class="field-label">Publication</span>
+              <label class="toggle-label">
+                <span>{{ editForm.estPubliee ? "Publiée" : "Dépubliée" }}</span>
+                <span class="switch">
+                  <input
+                    v-model="editForm.estPubliee"
+                    type="checkbox"
+                    :disabled="isSavingPublication"
+                    @change="handlePublicationToggle"
+                  />
+                  <span class="slider"></span>
+                </span>
+              </label>
+            </div>
+
+            <div class="access-panel">
+              <h3>Accès client</h3>
+              <div class="access-row">
+                <input
+                  v-model="newClientEmail"
+                  class="edit-input"
+                  type="email"
+                  placeholder="email.client@exemple.com"
+                />
+                <button
+                  class="add-access-btn"
+                  :disabled="isAddingClientEmail"
+                  @click="addClientAccess"
+                >
+                  {{ isAddingClientEmail ? "Ajout..." : "Ajouter" }}
+                </button>
+              </div>
+              <div class="access-list">
+                <p v-if="invitedEmails.length === 0" class="access-empty">
+                  Aucun client n'a encore accès à cette galerie.
+                </p>
+                <ul v-else>
+                  <li v-for="email in invitedEmails" :key="email">
+                    {{ email }}
+                  </li>
+                </ul>
+              </div>
+            </div>
+
+            <div
+              v-if="
+                isSavingInfos ||
+                isSavingPublication ||
+                isAddingClientEmail ||
+                isSavingCoverPhoto
+              "
+              class="save-message"
+            >
+              Enregistrement en base de données...
+            </div>
+
+            <div v-if="saveError" class="save-message save-error">
+              {{ saveError }}
+            </div>
+            <div v-else-if="saveSuccess" class="save-message save-success">
+              {{ saveSuccess }}
+            </div>
+          </div>
+
           <p
-            v-if="galerieStore.currentGalerie.description"
+            v-else-if="galerieStore.currentGalerie.description"
             class="description-longue"
           >
             {{ galerieStore.currentGalerie.description }}
@@ -207,6 +473,18 @@ onMounted(() => {
                   loading="lazy"
                 />
                 <div class="stock-actions">
+                  <button
+                    class="cover-stock-btn"
+                    :class="{ selected: currentCoverPhotoId === photo.id }"
+                    :disabled="isSavingCoverPhoto"
+                    @click="choisirPhotoEntete(photo.id)"
+                  >
+                    {{
+                      currentCoverPhotoId === photo.id
+                        ? "Photo d'entête"
+                        : "Choisir comme entête"
+                    }}
+                  </button>
                   <button
                     class="add-stock-btn"
                     @click="addStockPhotoToGalerie(photo.id)"
@@ -410,6 +688,176 @@ onMounted(() => {
   margin-bottom: 2rem;
 }
 
+.edit-panel {
+  margin: 0 auto 2rem;
+  max-width: 680px;
+  text-align: left;
+  background: rgba(17, 24, 39, 0.65);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  padding: 1.25rem;
+}
+
+.edit-panel h2 {
+  margin: 0 0 1rem;
+  font-size: 1.1rem;
+}
+
+.field-label {
+  display: block;
+  margin-bottom: 0.4rem;
+  color: #cbd5e1;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.edit-input,
+.edit-textarea {
+  width: 100%;
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  background: rgba(15, 23, 42, 0.75);
+  color: #f8fafc;
+  border-radius: 10px;
+  padding: 0.7rem 0.85rem;
+  font-size: 0.95rem;
+  margin-bottom: 1rem;
+}
+
+.edit-textarea {
+  resize: vertical;
+  min-height: 96px;
+}
+
+.publish-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.toggle-label {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  color: #e2e8f0;
+}
+
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 52px;
+  height: 30px;
+}
+
+.switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.slider {
+  position: absolute;
+  cursor: pointer;
+  inset: 0;
+  background-color: rgba(239, 68, 68, 0.35);
+  border: 1px solid rgba(239, 68, 68, 0.5);
+  transition: 0.25s;
+  border-radius: 999px;
+}
+
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 22px;
+  width: 22px;
+  left: 3px;
+  top: 3px;
+  background-color: #f8fafc;
+  transition: 0.25s;
+  border-radius: 50%;
+}
+
+.switch input:checked + .slider {
+  background-color: rgba(34, 197, 94, 0.35);
+  border-color: rgba(34, 197, 94, 0.55);
+}
+
+.switch input:checked + .slider:before {
+  transform: translateX(22px);
+}
+
+.switch input:disabled + .slider {
+  opacity: 0.65;
+  cursor: wait;
+}
+
+.save-message {
+  margin-bottom: 0.8rem;
+  font-size: 0.9rem;
+}
+
+.save-error {
+  color: #fda4af;
+}
+
+.save-success {
+  color: #86efac;
+}
+
+.access-panel {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.access-panel h3 {
+  margin: 0 0 0.7rem;
+  font-size: 0.95rem;
+}
+
+.access-row {
+  display: flex;
+  gap: 0.6rem;
+  align-items: center;
+}
+
+.access-row .edit-input {
+  margin-bottom: 0;
+}
+
+.add-access-btn {
+  border: 1px solid rgba(59, 130, 246, 0.4);
+  background: rgba(59, 130, 246, 0.2);
+  color: #dbeafe;
+  border-radius: 10px;
+  padding: 0.65rem 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.add-access-btn:disabled {
+  opacity: 0.65;
+  cursor: wait;
+}
+
+.access-list {
+  margin-top: 0.8rem;
+  max-height: 120px;
+  overflow-y: auto;
+}
+
+.access-list ul {
+  margin: 0;
+  padding-left: 1rem;
+}
+
+.access-empty {
+  margin: 0;
+  color: #94a3b8;
+  font-size: 0.9rem;
+}
+
 /* SECTION PHOTOS */
 .photos-container {
   margin-top: 2rem;
@@ -516,9 +964,27 @@ onMounted(() => {
 
 .stock-actions {
   display: flex;
+  flex-direction: column;
   justify-content: center;
+  gap: 0.35rem;
   padding: 0.55rem;
   background: rgba(17, 24, 39, 0.95);
+}
+
+.cover-stock-btn {
+  padding: 0.35rem 0.65rem;
+  border: 1px solid rgba(16, 185, 129, 0.35);
+  background: rgba(16, 185, 129, 0.12);
+  color: #bbf7d0;
+  border-radius: 999px;
+  font-weight: 600;
+  font-size: 0.78rem;
+  cursor: pointer;
+}
+
+.cover-stock-btn.selected {
+  background: rgba(16, 185, 129, 0.25);
+  border-color: rgba(16, 185, 129, 0.6);
 }
 
 .add-stock-btn {

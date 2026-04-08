@@ -14,6 +14,9 @@ interface GalerieRepositoryInterface
     public function supprimerPhotoGalerie(string $galerieId, string $photoId): bool;
     public function publierGalerie(string $galerieId): void;
     public function depublierGalerie(string $galerieId): void;
+    public function ajouterEmailClient(string $galerieId, string $email): void;
+    public function definirPhotoEntete(string $galerieId, ?string $photoId): void;
+    public function modifierInfosGalerie(string $galerieId, string $titre, string $description): void;
     public function modifierMiseEnPage(string $galerieId, string $miseEnPage): void;
     public function getGalerieById(string $id): ?Galerie;
     public function creerGalerie(Galerie $galerie): Galerie;
