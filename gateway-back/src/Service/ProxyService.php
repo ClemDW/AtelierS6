@@ -32,7 +32,12 @@ final class ProxyService
 
         $uploadedFiles = $request->getUploadedFiles();
         if (!empty($uploadedFiles)) {
-            unset($options['headers']['Content-Type']);
+            // Supprimer Content-Type sans distinction de casse — Guzzle le régénère avec le bon boundary
+            $options['headers'] = array_filter(
+                $options['headers'],
+                static fn (string $key): bool => strtolower($key) !== 'content-type',
+                ARRAY_FILTER_USE_KEY
+            );
             $options['multipart'] = $this->buildMultipart($request->getParsedBody(), $uploadedFiles);
         } else {
             $body = (string) $request->getBody();

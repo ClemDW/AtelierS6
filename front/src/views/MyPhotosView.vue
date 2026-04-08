@@ -1,8 +1,10 @@
 <script setup lang="ts">
-import { onMounted, ref } from "vue";
+import { computed, onMounted, ref } from "vue";
 import { useRouter } from "vue-router";
 import { useAuthStore } from "../stores/auth";
 import { useGalerieStore, type Photo } from "../stores/galerie";
+import PhotoSearchField from "../components/PhotoSearchField.vue";
+import PhotoThumbnailCard from "../components/PhotoThumbnailCard.vue";
 
 const router = useRouter();
 const authStore = useAuthStore();
@@ -17,21 +19,45 @@ const uploadSuccessCount = ref(0);
 const photos = ref<Photo[]>([]);
 const errorMessage = ref("");
 const pendingUploads = ref<Array<{ file: File; titre: string }>>([]);
+const fileInput = ref<HTMLInputElement | null>(null);
+const searchQuery = ref("");
 
-const titleFromFileName = (fileName: string) => {
-  return fileName.trim();
+const titleFromFileName = (fileName: string) => fileName.trim();
+const isImageFile = (file: File) => file.type.startsWith("image/");
+
+const appendFiles = (files: File[]) => {
+  const validFiles = files.filter(isImageFile);
+  const existingKeys = new Set(
+    pendingUploads.value.map(
+      (item: { file: File; titre: string }) =>
+        `${item.file.name}:${item.file.size}:${item.file.lastModified}`,
+    ),
+  );
+
+  const newItems = validFiles
+    .filter(
+      (file) =>
+        !existingKeys.has(`${file.name}:${file.size}:${file.lastModified}`),
+    )
+    .map((file) => ({
+      file,
+      titre: titleFromFileName(file.name),
+    }));
+
+  pendingUploads.value = [...pendingUploads.value, ...newItems];
 };
 
-const resolvePhotoSrc = (photo: any) => {
-  if (photo?.url) return photo.url;
-  if (photo?.id) {
-    const photoBase =
-      import.meta.env.VITE_STORAGE_PHOTO_URL ||
-      `${import.meta.env.VITE_API_BACK_URL || "http://dockertu.iutnc.univ-lorraine.fr:11202/api/back"}/storage/photos`;
-    return `${photoBase}/${photo.id}`;
-  }
-  return "/img-placeholder.svg";
-};
+const filteredPhotos = computed(() => {
+  const query = searchQuery.value.trim().toLowerCase();
+  if (!query) return photos.value;
+
+  return photos.value.filter((photo: any) => {
+    const title = String(
+      photo?.titre || photo?.nom_original || "",
+    ).toLowerCase();
+    return title.includes(query);
+  });
+});
 
 const loadMyPhotos = async () => {
   const userId = authStore.user?.id;
@@ -53,10 +79,7 @@ const loadMyPhotos = async () => {
 };
 
 const queueFiles = (files: File[]) => {
-  pendingUploads.value = files.map((file) => ({
-    file,
-    titre: titleFromFileName(file.name),
-  }));
+  appendFiles(files);
 };
 
 const processPendingUploads = async () => {
@@ -103,6 +126,10 @@ const handleDrop = (e: DragEvent) => {
   }
 };
 
+const openFilePicker = () => {
+  fileInput.value?.click();
+};
+
 const handleLogout = () => {
   authStore.logout();
   router.push({ name: "login" });
@@ -116,9 +143,9 @@ onMounted(() => {
 <template>
   <div class="my-photos-wrapper">
     <nav class="glass-nav">
-      <RouterLink :to="{ name: 'home' }" class="nav-brand"
-        >Photo<span class="highlight">Pro</span></RouterLink
-      >
+      <RouterLink :to="{ name: 'home' }" class="nav-brand">
+        Photo<span class="highlight">Pro</span>
+      </RouterLink>
       <div class="nav-actions">
         <RouterLink :to="{ name: 'my-galeries' }" class="nav-link"
           >Mes Galeries</RouterLink
@@ -144,7 +171,7 @@ onMounted(() => {
           @dragover.prevent="isDragging = true"
           @dragleave.prevent="isDragging = false"
           @drop.prevent="handleDrop"
-          @click="($refs.fileInput as HTMLInputElement)?.click()"
+          @click="openFilePicker"
         >
           <div class="dropzone-content">
             <strong v-if="!isUploading">Uploader de nouvelles photos</strong>
@@ -155,6 +182,14 @@ onMounted(() => {
             <span v-else
               >{{ uploadSuccessCount }} / {{ uploadTotal }} fichiers</span
             >
+            <button
+              type="button"
+              class="picker-btn"
+              @click.stop="openFilePicker"
+              :disabled="isUploading"
+            >
+              Choisir plusieurs photos
+            </button>
           </div>
           <div v-if="isUploading" class="progress-bar">
             <div
@@ -209,6 +244,13 @@ onMounted(() => {
       </section>
 
       <section class="photos-section">
+        <PhotoSearchField
+          v-model="searchQuery"
+          id="photo-search"
+          placeholder="Ex: voyage, portrait, coucher de soleil..."
+          class="search-block"
+        />
+
         <div v-if="isLoading" class="state">Chargement du stock...</div>
         <div v-else-if="errorMessage" class="state error">
           {{ errorMessage }}
@@ -216,18 +258,18 @@ onMounted(() => {
         <div v-else-if="photos.length === 0" class="state">
           Aucune photo dans votre stock.
         </div>
+        <div v-else-if="filteredPhotos.length === 0" class="state">
+          Aucune photo ne correspond à votre recherche.
+        </div>
 
         <div v-else class="photos-grid">
-          <div v-for="photo in photos" :key="photo.id" class="photo-card">
-            <img
-              :src="resolvePhotoSrc(photo)"
-              :alt="photo.titre || 'Photo'"
-              loading="lazy"
-            />
-            <div class="photo-meta">
-              {{ photo.titre || (photo as any).nom_original || "Sans titre" }}
-            </div>
-          </div>
+          <PhotoThumbnailCard
+            v-for="photo in filteredPhotos"
+            :key="photo.id"
+            :photo="photo"
+            fallback-src="/img-placeholder.svg"
+            variant="compact"
+          />
         </div>
       </section>
     </main>
@@ -320,6 +362,7 @@ onMounted(() => {
   display: flex;
   flex-direction: column;
   gap: 0.4rem;
+  align-items: center;
 }
 
 .dropzone-content span {
@@ -342,6 +385,22 @@ onMounted(() => {
 
 .hidden-input {
   display: none;
+}
+
+.picker-btn {
+  margin-top: 0.5rem;
+  border: 1px solid rgba(59, 130, 246, 0.45);
+  background: rgba(59, 130, 246, 0.18);
+  color: #dbeafe;
+  border-radius: 999px;
+  padding: 0.55rem 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.picker-btn:disabled {
+  opacity: 0.7;
+  cursor: wait;
 }
 
 .pending-panel {
@@ -413,30 +472,15 @@ onMounted(() => {
   color: #fff;
 }
 
+.search-block {
+  margin-bottom: 1rem;
+}
+
 .photos-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-  gap: 1rem;
-}
-
-.photo-card {
-  border-radius: 12px;
-  overflow: hidden;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  background: rgba(255, 255, 255, 0.03);
-}
-
-.photo-card img {
-  width: 100%;
-  height: 200px;
-  object-fit: cover;
-  display: block;
-}
-
-.photo-meta {
-  padding: 0.7rem 0.9rem;
-  color: #cbd5e1;
-  font-size: 0.9rem;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 0.8rem;
+  align-items: start;
 }
 
 .state {

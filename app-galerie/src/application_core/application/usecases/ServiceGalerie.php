@@ -9,6 +9,7 @@ use photopro\core\domain\exceptions\PhotoNotFoundException;
 use photopro\core\application\ports\api\dtos\GaleriesListeDTO;
 use photopro\core\application\ports\api\ServiceGalerieInterface;
 use photopro\core\application\ports\spi\GalerieRepositoryInterface;
+use photopro\core\application\ports\spi\GalerieEventPublisherInterface;
 use photopro\core\application\ports\api\dtos\GalerieAfficheDTO;
 use photopro\core\application\ports\api\dtos\CreerGalerieDTO;
 use Ramsey\Uuid\Uuid;
@@ -16,10 +17,14 @@ use Ramsey\Uuid\Uuid;
 class ServiceGalerie implements ServiceGalerieInterface
 {
     private GalerieRepositoryInterface $galerieRepository;
+    private GalerieEventPublisherInterface $eventPublisher;
 
-    public function __construct(GalerieRepositoryInterface $galerieRepository)
-    {
+    public function __construct(
+        GalerieRepositoryInterface $galerieRepository,
+        GalerieEventPublisherInterface $eventPublisher
+    ) {
         $this->galerieRepository = $galerieRepository;
+        $this->eventPublisher    = $eventPublisher;
     }
 
     private function getGalerieOuException(string $galerieId): Galerie
@@ -43,7 +48,8 @@ class ServiceGalerie implements ServiceGalerieInterface
                 $galerie->getDateCreation(),
                 $galerie->getType(),
                 $galerie->isPublic(),
-                $galerie->getUrl()
+                $galerie->getUrl(),
+                $galerie->getPhotoEnteteId()
             );
         }
         return $galeries;
@@ -61,7 +67,8 @@ class ServiceGalerie implements ServiceGalerieInterface
                 $galerie->getDateCreation(),
                 $galerie->getType(),
                 $galerie->isPublic(),
-                $galerie->getUrl()
+                $galerie->getUrl(),
+                $galerie->getPhotoEnteteId()
             );
         }
         return $galeries;
@@ -86,7 +93,8 @@ class ServiceGalerie implements ServiceGalerieInterface
             $galerie->getCodeAcces(),
             $galerie->getUrl(),
             $galerie->getPhotos(),
-            $galerie->getEmailsClients()
+            $galerie->getEmailsClients(),
+            $galerie->getPhotoEnteteId()
         );
     }
 
@@ -106,7 +114,8 @@ class ServiceGalerie implements ServiceGalerieInterface
             $galerie->getCodeAcces(),
             $galerie->getUrl(),
             $galerie->getPhotos(),
-            $galerie->getEmailsClients()
+            $galerie->getEmailsClients(),
+            $galerie->getPhotoEnteteId()
         );
     }
 
@@ -127,14 +136,38 @@ class ServiceGalerie implements ServiceGalerieInterface
 
     public function publierGalerie(string $galerieId): void
     {
-        $this->getGalerieOuException($galerieId);
+        $galerie = $this->getGalerieOuException($galerieId);
         $this->galerieRepository->publierGalerie($galerieId);
+        $this->notifierDestinataires($galerie, 'galery.publication');
     }
 
     public function depublierGalerie(string $galerieId): void
     {
-        $this->getGalerieOuException($galerieId);
+        $galerie = $this->getGalerieOuException($galerieId);
         $this->galerieRepository->depublierGalerie($galerieId);
+        $this->notifierDestinataires($galerie, 'galery.depublication');
+    }
+
+    public function ajouterEmailClient(string $galerieId, string $email): void
+    {
+        $this->getGalerieOuException($galerieId);
+        $this->galerieRepository->ajouterEmailClient($galerieId, $email);
+    }
+
+    public function definirPhotoEntete(string $galerieId, ?string $photoId): void
+    {
+        $this->getGalerieOuException($galerieId);
+        $this->galerieRepository->definirPhotoEntete($galerieId, $photoId);
+    }
+
+    public function modifierInfosGalerie(string $galerieId, string $titre, string $description): void
+    {
+        $galerie = $this->getGalerieOuException($galerieId);
+        $this->galerieRepository->modifierInfosGalerie($galerieId, $titre, $description);
+        // Notifier uniquement si la galerie est déjà publiée
+        if ($galerie->isPublic()) {
+            $this->notifierDestinataires($galerie, 'galery.modification', $titre);
+        }
     }
 
     public function modifierMiseEnPage(string $galerieId, string $miseEnPage): void
@@ -170,10 +203,15 @@ class ServiceGalerie implements ServiceGalerieInterface
             $dto->emailsClients,
             $codeAcces,
             $url,
-            $dto->photos
+            $dto->photos,
+            null
         );
 
-        $galerieCreee = $this->galerieRepository->creerGalerie($galerie, $dto->emailsClients);
+        $galerieCreee = $this->galerieRepository->creerGalerie($galerie);
+
+        if ($dto->estPubliee) {
+            $this->notifierDestinataires($galerieCreee, 'galery.publication');
+        }
 
         return new GalerieAfficheDTO(
             $galerieCreee->getId(),
@@ -188,7 +226,69 @@ class ServiceGalerie implements ServiceGalerieInterface
             $galerieCreee->getCodeAcces(),
             $galerieCreee->getUrl(),
             $galerieCreee->getPhotos(),
-            $galerieCreee->getEmailsClients()
+            $galerieCreee->getEmailsClients(),
+            $galerieCreee->getPhotoEnteteId()
         );
+    }
+
+    /**
+     * Publie un événement RabbitMQ vers chaque destinataire (photographe + clients).
+     *
+     * @param string|null $titreOverride Titre à utiliser à la place de celui de la galerie (modification en cours)
+     */
+    private function notifierDestinataires(Galerie $galerie, string $eventType, ?string $titreOverride = null): void
+    {
+        $titre = $titreOverride ?? $galerie->getTitre();
+        $timestamp = (new \DateTime())->format('c');
+        $galerieData = [
+            'name'        => $titre,
+            'url'         => $galerie->getUrl() ?: ('/galeries/' . $galerie->getId()),
+            'code_acces'  => $galerie->getCodeAcces(),
+        ];
+
+        $emailsDejaNotifies = [];
+
+        // Notification au photographe
+        $photographe = $this->galerieRepository->getPhotographeById($galerie->getPhotographeId());
+        if ($photographe !== null && !empty($photographe['email_contact'])) {
+            $emailPhotographe = strtolower(trim($photographe['email_contact']));
+            $this->publierMessage($emailPhotographe, $photographe['nom'], '', $galerieData, $eventType, $timestamp);
+            $emailsDejaNotifies[] = $emailPhotographe;
+        }
+
+        // Notification à chaque client (en évitant les doublons)
+        foreach ($galerie->getEmailsClients() as $emailClient) {
+            $emailNormalise = strtolower(trim($emailClient));
+            if (in_array($emailNormalise, $emailsDejaNotifies, true)) {
+                continue;
+            }
+            $this->publierMessage($emailNormalise, '', '', $galerieData, $eventType, $timestamp);
+            $emailsDejaNotifies[] = $emailNormalise;
+        }
+    }
+
+    private function publierMessage(
+        string $email,
+        string $nom,
+        string $prenom,
+        array  $galerieData,
+        string $eventType,
+        string $timestamp
+    ): void {
+        try {
+            $this->eventPublisher->publish([
+                'event_type'  => $eventType,
+                'timestamp'   => $timestamp,
+                'destinataire' => [
+                    'email'  => $email,
+                    'nom'    => $nom,
+                    'prenom' => $prenom,
+                ],
+                'galery' => $galerieData,
+            ]);
+        } catch (\Throwable $e) {
+            // On log l'erreur sans bloquer la réponse HTTP
+            error_log('[GalerieEventPublisher] Erreur publication RabbitMQ : ' . $e->getMessage());
+        }
     }
 }

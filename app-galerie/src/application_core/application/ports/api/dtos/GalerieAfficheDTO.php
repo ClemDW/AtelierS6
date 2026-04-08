@@ -11,13 +11,14 @@ class GalerieAfficheDTO
     public string $titre;
     public string $description;
     public string $dateCreation;
-    public string $datePublication;
+    public ?string $datePublication;
     public bool $estPubliee;
-    public string $modeMiseEnPage;
-    public string $codeAcces;
-    public string $url;
+    public ?string $modeMiseEnPage;
+    public ?string $codeAcces;
+    public ?string $url;
     public array $photos;
     public array $emailsClients;
+    public ?string $photoEnteteId;
 
     public function __construct(
         string $id,
@@ -26,13 +27,14 @@ class GalerieAfficheDTO
         string $titre,
         string $description,
         string $dateCreation,
-        string $datePublication,
+        ?string $datePublication,
         bool $estPubliee,
-        string $modeMiseEnPage,
-        string $codeAcces,
-        string $url,
+        ?string $modeMiseEnPage,
+        ?string $codeAcces,
+        ?string $url,
         array $photos,
-        array $emailsClients
+        array $emailsClients,
+        ?string $photoEnteteId = null
     ) {
         $this->id = $id;
         $this->photographeId = $photographeId;
@@ -47,5 +49,6 @@ class GalerieAfficheDTO
         $this->url = $url;
         $this->photos = $photos;
         $this->emailsClients = $emailsClients;
+        $this->photoEnteteId = $photoEnteteId;
     }
 }

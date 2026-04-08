@@ -13,13 +13,14 @@ class Galerie
     private string $titre;
     private string $description;
     private string $dateCreation;
-    private string $datePublication;
+    private ?string $datePublication;
     private bool $isPublic;
-    private string $mise_en_page;
+    private ?string $mise_en_page;
     private array $email_clients;
-    private string $code_acces;
-    private string $url;
+    private ?string $code_acces;
+    private ?string $url;
     private array $photos;
+    private ?string $photo_entete_id;
 
     public function __construct(
         string $id,
@@ -28,13 +29,14 @@ class Galerie
         string $titre,
         string $description,
         string $dateCreation,
-        string $datePublication,
+        ?string $datePublication,
         bool $isPublic,
-        string $mise_en_page,
+        ?string $mise_en_page,
         array $email_clients,
         string $code_acces,
         string $url,
-        array $photos
+        array $photos,
+        ?string $photo_entete_id = null
     ) {
         $this->id = $id;
         $this->photographeId = $photographeId;
@@ -49,6 +51,7 @@ class Galerie
         $this->code_acces = $code_acces;
         $this->url = $url;
         $this->photos = $photos;
+        $this->photo_entete_id = $photo_entete_id;
     }
 
     public function getId(): string
@@ -81,7 +84,7 @@ class Galerie
         return $this->dateCreation;
     }
 
-    public function getDatePublication(): string
+    public function getDatePublication(): ?string
     {
         return $this->datePublication;
     }
@@ -91,7 +94,7 @@ class Galerie
         return $this->isPublic;
     }
 
-    public function getMiseEnPage(): string
+    public function getMiseEnPage(): ?string
     {
         return $this->mise_en_page;
     }
@@ -101,12 +104,12 @@ class Galerie
         return $this->email_clients;
     }
 
-    public function getCodeAcces(): string
+    public function getCodeAcces(): ?string
     {
         return $this->code_acces;
     }
 
-    public function getUrl(): string
+    public function getUrl(): ?string
     {
         return $this->url;
     }
@@ -114,6 +117,11 @@ class Galerie
     public function getPhotos(): array
     {
         return $this->photos;
+    }
+
+    public function getPhotoEnteteId(): ?string
+    {
+        return $this->photo_entete_id;
     }
 
 }

@@ -16,6 +16,17 @@ const handleLogout = () => {
   router.push({ name: "login" });
 };
 
+const getPhotoEnteteUrl = (galerie: any): string => {
+  const photoId = galerie?.photoEnteteId || galerie?.photo_entete_id;
+  if (!photoId) {
+    return "";
+  }
+  const photoBase =
+    import.meta.env.VITE_STORAGE_PHOTO_URL ||
+    `${import.meta.env.VITE_API_BACK_URL || "http://localhost:6081/api/back"}/storage/photos`;
+  return `${photoBase}/${photoId}`;
+};
+
 const fetchRecentGaleries = async () => {
   if (!authStore.user?.id) return;
   isLoading.value = true;
@@ -150,7 +161,13 @@ onMounted(() => {
             "
           >
             <div class="card-mini-img">
-              <div class="placeholder-dots"></div>
+              <img
+                v-if="getPhotoEnteteUrl(galerie)"
+                :src="getPhotoEnteteUrl(galerie)"
+                :alt="galerie.titre"
+                class="entete-photo"
+              />
+              <div v-else class="placeholder-dots"></div>
               <button
                 @click.stop="confirmDelete(galerie.id, galerie.titre)"
                 class="delete-mini-btn"
@@ -436,6 +453,14 @@ onMounted(() => {
   height: 120px;
   background: #1e293b;
   position: relative;
+  overflow: hidden;
+}
+
+.entete-photo {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
 }
 
 .placeholder-dots {

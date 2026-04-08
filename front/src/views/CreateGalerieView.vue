@@ -1,40 +1,146 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
-import { useRouter } from 'vue-router'
-import { useAuthStore } from '../stores/auth'
-import { useGalerieStore } from '../stores/galerie'
+import { ref, computed } from "vue";
+import { useRouter } from "vue-router";
+import { useAuthStore } from "../stores/auth";
+import { useGalerieStore } from "../stores/galerie";
 
-const router = useRouter()
-const authStore = useAuthStore()
-const galerieStore = useGalerieStore()
+const router = useRouter();
+const authStore = useAuthStore();
+const galerieStore = useGalerieStore();
 
 // --- Form state ---
-const titre = ref('')
-const description = ref('')
-const type_visibilite = ref('public') // 'public' or 'private'
-const estPubliee = ref(false)
+const titre = ref("");
+const description = ref("");
+const type_visibilite = ref("public"); // 'public' or 'private'
+const estPubliee = ref(false);
+const emailClient = ref("");
 
-const isCreating = ref(false)
-const errorMessage = ref('')
-const successMessage = ref('')
+const isCreating = ref(false);
+const errorMessage = ref("");
+const successMessage = ref("");
+
+type ApiErrorPayload = {
+  message?: string;
+  error?: string;
+};
+
+type ApiError = {
+  response?: {
+    status?: number;
+    _data?: ApiErrorPayload;
+  };
+  data?: ApiErrorPayload;
+  message?: string;
+};
 
 const canSubmit = computed(() => {
-  return titre.value.trim() !== '' && !isCreating.value
-})
+  return titre.value.trim() !== "" && !isCreating.value;
+});
+
+function isValidEmail(email: string): boolean {
+  if (!email.trim()) {
+    return true;
+  }
+
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
+}
+
+function getCreateGalerieErrorMessage(err: unknown): string {
+  const apiError = err as ApiError;
+  const status = apiError?.response?.status;
+  const backendMessage =
+    apiError?.response?._data?.message ||
+    apiError?.response?._data?.error ||
+    apiError?.data?.message ||
+    apiError?.data?.error;
+
+  if (status === 400) {
+    return (
+      backendMessage ||
+      "Les informations saisies sont invalides. Vérifiez le titre et l'email client."
+    );
+  }
+
+  if (status === 401) {
+    return "Votre session a expiré. Reconnectez-vous puis réessayez.";
+  }
+
+  if (status === 403) {
+    return "Vous n'avez pas les droits nécessaires pour créer une galerie.";
+  }
+
+  if (status === 404) {
+    return "Le service de création de galerie est introuvable pour le moment.";
+  }
+
+  if (status === 409) {
+    return backendMessage || "Une galerie avec ces informations existe déjà.";
+  }
+
+  if (status === 413) {
+    return "La requête est trop volumineuse pour être traitée.";
+  }
+
+  if (status === 422) {
+    return (
+      backendMessage || "Certaines données ne respectent pas le format attendu."
+    );
+  }
+
+  if (status === 429) {
+    return "Trop de tentatives de création. Patientez quelques instants puis réessayez.";
+  }
+
+  if (status && status >= 500) {
+    return "Le serveur rencontre un problème temporaire. Réessayez dans quelques instants.";
+  }
+
+  if (apiError?.message?.toLowerCase().includes("fetch")) {
+    return "Connexion impossible au serveur. Vérifiez votre réseau puis réessayez.";
+  }
+
+  return "Impossible de créer la galerie pour le moment. Veuillez réessayer.";
+}
+
+function validateCreateForm(): string | null {
+  if (isCreating.value) {
+    return "La création est déjà en cours. Veuillez patienter.";
+  }
+
+  if (!titre.value.trim()) {
+    return "Le titre de la galerie est obligatoire.";
+  }
+
+  if (!["public", "private"].includes(type_visibilite.value)) {
+    return "Le type de confidentialité sélectionné est invalide.";
+  }
+
+  if (!isValidEmail(emailClient.value)) {
+    return "L'email client n'est pas valide.";
+  }
+
+  return null;
+}
 
 // --- Submit ---
 async function handleSubmit() {
-  if (!canSubmit.value) return
+  const validationError = validateCreateForm();
+  if (validationError) {
+    errorMessage.value = validationError;
+    successMessage.value = "";
+    return;
+  }
 
-  isCreating.value = true
-  errorMessage.value = ''
-  successMessage.value = ''
+  isCreating.value = true;
+  errorMessage.value = "";
+  successMessage.value = "";
 
-  const userId = authStore.user?.id
+  const userId = authStore.user?.id;
   if (!userId) {
-    errorMessage.value = 'Vous devez être connecté pour créer une galerie.'
-    isCreating.value = false
-    return
+    errorMessage.value =
+      "Action impossible : votre profil utilisateur est introuvable. Reconnectez-vous.";
+    isCreating.value = false;
+    return;
   }
 
   try {
@@ -45,31 +151,34 @@ async function handleSubmit() {
       titre: titre.value,
       description: description.value,
       estPubliee: estPubliee.value,
-      modeMiseEnPage: 'grille', // Valeur par défaut
-      photos: [] // Pas de photos à la création initiale
-    })
+      modeMiseEnPage: "grille", // Valeur par défaut
+      emailsClients: emailClient.value.trim()
+        ? [emailClient.value.trim().toLowerCase()]
+        : [],
+      photos: [], // Pas de photos à la création initiale
+    });
 
-    successMessage.value = 'Galerie créée avec succès !'
+    successMessage.value = "Galerie créée avec succès !";
 
     // Redirection vers le détail de la galerie pour ajouter des photos
-    const galerieId = galerie?.id
+    const galerieId = galerie?.id;
     setTimeout(() => {
       if (galerieId) {
-        router.push({ name: 'galerie-detail', params: { id: galerieId } })
+        router.push({ name: "galerie-detail", params: { id: galerieId } });
       } else {
-        router.push({ name: 'home' })
+        router.push({ name: "home" });
       }
-    }, 1200)
+    }, 1200);
   } catch (err) {
-    errorMessage.value = 'Impossible de créer la galerie. Veuillez réessayer.'
+    errorMessage.value = getCreateGalerieErrorMessage(err);
   } finally {
-    isCreating.value = false
+    isCreating.value = false;
   }
 }
 
 function handleLogout() {
-  authStore.logout()
-  router.push({ name: 'login' })
+  authStore.logout();
+  router.push({ name: "login" });
 }
 </script>
 
@@ -77,11 +186,29 @@ function handleLogout() {
   <div class="create-wrapper">
     <!-- Navigation -->
     <nav class="glass-nav">
-      <RouterLink :to="{ name: 'home' }" class="nav-brand">Photo<span class="highlight">Pro</span></RouterLink>
+      <RouterLink :to="{ name: 'home' }" class="nav-brand"
+        >Photo<span class="highlight">Pro</span></RouterLink
+      >
       <div class="nav-actions">
-        <RouterLink :to="{ name: 'home' }" class="nav-link">← Tableau de bord</RouterLink>
+        <RouterLink :to="{ name: 'home' }" class="nav-link"
+          >← Tableau de bord</RouterLink
+        >
         <button @click="handleLogout" class="logout-btn">
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+            <polyline points="16 17 21 12 16 7"></polyline>
+            <line x1="21" y1="12" x2="9" y2="12"></line>
+          </svg>
         </button>
       </div>
     </nav>
@@ -125,9 +252,15 @@ function handleLogout() {
 
             <div class="input-group">
               <label for="visibilite">Confidentialité</label>
-              <select id="visibilite" v-model="type_visibilite" :disabled="isCreating">
+              <select
+                id="visibilite"
+                v-model="type_visibilite"
+                :disabled="isCreating"
+              >
                 <option value="public">Publique (Visible par tous)</option>
-                <option value="private">Privée (Accès par lien sécurisé)</option>
+                <option value="private">
+                  Privée (Accès par lien sécurisé)
+                </option>
               </select>
             </div>
 
@@ -135,10 +268,26 @@ function handleLogout() {
               <label class="toggle-label" for="estPubliee">
                 <span>Rendre visible immédiatement (Publiée)</span>
                 <div class="toggle-switch" :class="{ active: estPubliee }">
-                  <input type="checkbox" id="estPubliee" v-model="estPubliee" :disabled="isCreating" />
+                  <input
+                    type="checkbox"
+                    id="estPubliee"
+                    v-model="estPubliee"
+                    :disabled="isCreating"
+                  />
                   <span class="toggle-slider"></span>
                 </div>
               </label>
+            </div>
+
+            <div class="input-group">
+              <label for="email-client">Email client </label>
+              <input
+                type="email"
+                id="email-client"
+                v-model="emailClient"
+                placeholder="client@exemple.com"
+                :disabled="isCreating"
+              />
             </div>
           </section>
 
@@ -151,15 +300,15 @@ function handleLogout() {
           </div>
 
           <div class="form-actions">
-            <RouterLink :to="{ name: 'home' }" class="cancel-btn">Annuler</RouterLink>
+            <RouterLink :to="{ name: 'home' }" class="cancel-btn"
+              >Annuler</RouterLink
+            >
             <button type="submit" class="submit-btn" :disabled="!canSubmit">
               <template v-if="isCreating">
                 <div class="spinner-small"></div>
                 Création en cours...
               </template>
-              <template v-else>
-                Créer la galerie
-              </template>
+              <template v-else> Créer la galerie </template>
             </button>
           </div>
         </form>
@@ -202,7 +351,9 @@ function handleLogout() {
   color: #f1f5f9;
 }
 
-.highlight { color: #3b82f6; }
+.highlight {
+  color: #3b82f6;
+}
 
 .nav-actions {
   display: flex;
@@ -216,7 +367,9 @@ function handleLogout() {
   font-weight: 500;
   transition: color 0.3s;
 }
-.nav-link:hover { color: #fff; }
+.nav-link:hover {
+  color: #fff;
+}
 
 .logout-btn {
   display: flex;
@@ -379,7 +532,7 @@ function handleLogout() {
 }
 
 .toggle-slider::before {
-  content: '';
+  content: "";
   position: absolute;
   width: 20px;
   height: 20px;
@@ -439,7 +592,9 @@ function handleLogout() {
   transition: color 0.2s;
 }
 
-.cancel-btn:hover { color: #fff; }
+.cancel-btn:hover {
+  color: #fff;
+}
 
 .submit-btn {
   display: flex;
@@ -478,16 +633,28 @@ function handleLogout() {
 
 /* --- ANIMATIONS --- */
 @keyframes spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 @keyframes slideUp {
-  from { opacity: 0; transform: translateY(20px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 </style>
