@@ -119,6 +119,30 @@ class ServiceGalerie implements ServiceGalerieInterface
         );
     }
 
+    public function getGalerieAfficheComplet(string $id): GalerieAfficheDTO
+    {
+        $galerie = $this->galerieRepository->getGalerieByIdComplet($id);
+        if ($galerie === null) {
+            throw new GalerieNotFoundException($id);
+        }
+        return new GalerieAfficheDTO(
+            $galerie->getId(),
+            $galerie->getPhotographeId(),
+            $galerie->isPublic() ? 'public' : 'privée',
+            $galerie->getTitre(),
+            $galerie->getDescription(),
+            $galerie->getDateCreation(),
+            $galerie->getDatePublication(),
+            $galerie->isPublic(),
+            $galerie->getMiseEnPage(),
+            $galerie->getCodeAcces(),
+            $galerie->getUrl(),
+            $galerie->getPhotos(),
+            $galerie->getEmailsClients(),
+            $galerie->getPhotoEnteteId()
+        );
+    }
+
     public function ajouterPhoto(string $galerieId, string $photoId): void
     {
         $this->getGalerieOuException($galerieId);

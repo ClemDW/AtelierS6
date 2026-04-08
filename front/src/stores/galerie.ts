@@ -92,7 +92,7 @@ export const useGalerieStore = defineStore("galerie", () => {
       // Nettoyage avant chargement (éviter d'afficher une ancienne galerie)
       currentGalerie.value = null;
 
-      const response = await api(`/galeries/${id}`, { method: "GET" });
+      const response = await api(`/galeries/${id}/complet`, { method: "GET" });
       currentGalerie.value = response;
       return response;
     } catch (error) {

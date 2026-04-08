@@ -190,7 +190,7 @@ class GalerieRepository implements GalerieRepositoryInterface
 
     public function getGalerieById(string $id): ?Galerie
     {
-        $stmt = $this->pdo->prepare('SELECT * FROM galerie WHERE id = :id');
+        $stmt = $this->pdo->prepare('SELECT * FROM galerie WHERE id = :id AND est_publiee = TRUE');
         $stmt->execute(['id' => $id]);
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
         if ($row) {
@@ -221,6 +221,42 @@ class GalerieRepository implements GalerieRepositoryInterface
                 $row['photo_entete_id'] ?? null
             );
         }else {
+            return null;
+        }
+    }
+
+    public function getGalerieByIdComplet(string $id): ?Galerie
+    {
+        $stmt = $this->pdo->prepare('SELECT * FROM galerie WHERE id = :id');
+        $stmt->execute(['id' => $id]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        if ($row) {
+            $emails_clients_stmt = $this->pdo->prepare('SELECT email FROM invitation WHERE galerie_id = :galerie_id');
+            $emails_clients_stmt->execute(['galerie_id' => $row['id']]);
+            $emails_clients = $emails_clients_stmt->fetchAll(PDO::FETCH_COLUMN);
+
+            $stmtIdPhotos = $this->pdo->prepare('SELECT * FROM galerie_photo WHERE galerie_id = :galerie_id');
+            $stmtIdPhotos->execute(['galerie_id' => $row['id']]);
+            $photosId = $stmtIdPhotos->fetchAll(PDO::FETCH_ASSOC);
+            $photos = $this->mapRowToPhoto($photosId);
+
+            return new Galerie(
+                $row['id'],
+                $row['photographe_id'],
+                $row['type_galerie'],
+                $row['titre'],
+                $row['description'],
+                $row['date_creation'],
+                $row['date_publication'] ?? '',
+                $row['est_publiee'],
+                $row['mode_mise_en_page'],
+                $emails_clients,
+                $row['code_acces'] ?? '',
+                $row['url_acces'] ?? '',
+                $photos,
+                $row['photo_entete_id'] ?? null
+            );
+        } else {
             return null;
         }
     }
