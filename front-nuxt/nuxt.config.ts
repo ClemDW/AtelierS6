@@ -6,11 +6,11 @@ export default defineNuxtConfig({
 
   runtimeConfig: {
     // API accessible côté serveur SSR
-    apiBase: process.env.NUXT_API_BASE || 'http://gatewayfront.photopro',
+    apiBase: process.env.NUXT_API_BASE,
     public: {
       // API et storage accessibles côté client CSR
-      apiBase: process.env.NUXT_PUBLIC_API_BASE || 'http://localhost:6080',
-      storageBase: process.env.NUXT_PUBLIC_STORAGE_BASE || 'http://localhost:6083'
+      apiBase: process.env.NUXT_PUBLIC_API_BASE,
+      storageBase: process.env.NUXT_PUBLIC_STORAGE_BASE
     }
   },
 
