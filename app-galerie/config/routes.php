@@ -12,6 +12,7 @@ use photopro\api\actions\AjouterPhotoAction;
 use photopro\api\actions\RetirerPhotoAction;
 use photopro\api\actions\ListeGalerieParPhotographeAction;
 use photopro\api\actions\ModifierMiseEnPageAction;
+use photopro\api\actions\RecupererCodeAccesAction;
 
 
 return function (App $app): App {
@@ -23,6 +24,7 @@ return function (App $app): App {
     $app->get('/galeries', ListeGalerieAction::class);
     $app->get('/photographes/{photographeId}/galeries', ListeGalerieParPhotographeAction::class);
     $app->get('/galeries/{id}', AfficherGalerieAction::class);
+    $app->get('/galeries/{id}/code', RecupererCodeAccesAction::class);
     $app->options('/galeries', function (Request $request, Response $response) {
         return $response
             ->withHeader('Access-Control-Allow-Origin', '*')
