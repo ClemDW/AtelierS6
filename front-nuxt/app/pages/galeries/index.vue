@@ -1,6 +1,16 @@
 <template>
   <div>
-    <h1 class="text-h3 mb-6">Galeries Publiques</h1>
+    <div class="d-flex justify-space-between align-center mb-6">
+      <h1 class="text-h3">Galeries Publiques</h1>
+      <v-btn
+        color="secondary"
+        variant="elevated"
+        prepend-icon="mdi-lock"
+        to="/privee"
+      >
+        Rejoindre une galerie privée
+      </v-btn>
+    </div>
     <v-row v-if="galeries && galeries.length">
       <v-col
         v-for="galerie in galeries"
@@ -60,14 +70,12 @@ const galeries = computed(() => {
   return []
 })
 
-// Les images sont TOUJOURS rendues par le navigateur, on pointe donc toujours vers l'URL publique du service de stockage
 const getImageUrl = (imagePath) => {
   if (!imagePath) return ''
   if (imagePath.startsWith('http')) return imagePath
   return `${config.public.storageBase}/photos/${imagePath}`
 }
 
-// Optionnel: Gérer les erreurs de fetch en développement
 if (error.value) {
   console.error("Erreur de récupération SSR : ", error.value)
 }
