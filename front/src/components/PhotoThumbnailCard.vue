@@ -14,7 +14,7 @@ const props = withDefaults(
     fallbackSrc?: string;
     showTitle?: boolean;
     imgClass?: string;
-    variant?: "default" | "compact";
+    variant?: "default" | "compact" | "thumb";
   }>(),
   {
     fallbackSrc: "/img-placeholder.svg",
@@ -54,10 +54,16 @@ const displayTitle = computed(
       :class="['photo-image', imgClass, { compact: variant === 'compact' }]"
       loading="lazy"
     />
-    <div v-if="showTitle" :class="['photo-meta', { compact: variant === 'compact' }]">
+    <div
+      v-if="showTitle"
+      :class="['photo-meta', { compact: variant === 'compact' }]"
+    >
       {{ displayTitle }}
     </div>
-    <div v-if="$slots.actions" :class="['photo-actions', { compact: variant === 'compact' }]">
+    <div
+      v-if="$slots.actions"
+      :class="['photo-actions', { compact: variant === 'compact' }]"
+    >
       <slot name="actions" :photo="photo" />
     </div>
   </div>
@@ -82,6 +88,18 @@ const displayTitle = computed(
   height: 120px;
 }
 
+.photo-image.thumb {
+  height: 80px;
+}
+
+.photo-image.slideshow-image {
+  height: min(72vh, 680px);
+  object-fit: contain;
+  background: rgba(3, 7, 18, 0.95);
+  box-sizing: border-box;
+  padding: 0.5rem;
+}
+
 .photo-meta {
   padding: 0.7rem 0.9rem;
   color: #cbd5e1;
@@ -91,6 +109,10 @@ const displayTitle = computed(
 .photo-meta.compact {
   padding: 0.5rem 0.65rem;
   font-size: 0.8rem;
+}
+
+.photo-meta.thumb {
+  display: none;
 }
 
 .photo-actions {
@@ -104,5 +126,9 @@ const displayTitle = computed(
 .photo-actions.compact {
   padding: 0.5rem 0.65rem 0.65rem;
   gap: 0.25rem;
+}
+
+.photo-actions.thumb {
+  display: none;
 }
 </style>

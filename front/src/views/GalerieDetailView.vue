@@ -5,6 +5,7 @@ import { useAuthStore } from "../stores/auth";
 import { useGalerieStore, type Galerie, type Photo } from "../stores/galerie";
 import PhotoSearchField from "../components/PhotoSearchField.vue";
 import PhotoThumbnailCard from "../components/PhotoThumbnailCard.vue";
+import GallerySlideshow from "../components/GallerySlideshow.vue";
 
 const router = useRouter();
 const route = useRoute();
@@ -22,6 +23,7 @@ const photoFallback = "/img-placeholder.svg";
 const stockPhotos = ref<Photo[]>([]);
 const stockSearchQuery = ref("");
 const stockLoading = ref(false);
+const stockPanelCollapsed = ref(true);
 const infosSaveDebounce = ref<ReturnType<typeof setTimeout> | null>(null);
 const newClientEmail = ref("");
 const isAddingClientEmail = ref(false);
@@ -30,6 +32,7 @@ const editForm = ref({
   titre: "",
   description: "",
   estPubliee: false,
+  modeMiseEnPage: "grille",
 });
 
 const invitedEmails = computed(() => {
@@ -40,6 +43,11 @@ const invitedEmails = computed(() => {
 const currentCoverPhotoId = computed(() => {
   const galerie = galerieStore.currentGalerie as any;
   return galerie?.photoEnteteId || galerie?.photo_entete_id || null;
+});
+
+const currentLayoutMode = computed(() => {
+  const galerie = galerieStore.currentGalerie as any;
+  return galerie?.modeMiseEnPage || galerie?.mode_mise_en_page || "grille";
 });
 
 const filteredStockPhotos = computed(() => {
@@ -53,6 +61,8 @@ const filteredStockPhotos = computed(() => {
     return title.includes(query);
   });
 });
+
+const stockPhotosCount = computed(() => stockPhotos.value.length);
 
 const isOwner = computed(() => {
   const galerie = galerieStore.currentGalerie as any;
@@ -82,6 +92,8 @@ const syncEditForm = () => {
     titre: galerie.titre || "",
     description: galerie.description || "",
     estPubliee: getPublicationValue(galerie),
+    modeMiseEnPage:
+      galerie.modeMiseEnPage || galerie.mode_mise_en_page || "grille",
   };
 };
 
@@ -184,6 +196,31 @@ const handlePublicationToggle = async () => {
     saveError.value = "Impossible de modifier la publication.";
   } finally {
     isSavingPublication.value = false;
+  }
+};
+
+const handleLayoutModeChange = async () => {
+  const galerie = galerieStore.currentGalerie;
+  if (!galerie) return;
+
+  const selectedMode = editForm.value.modeMiseEnPage || "grille";
+  const currentMode = currentLayoutMode.value;
+  if (selectedMode === currentMode) {
+    return;
+  }
+
+  saveError.value = "";
+  saveSuccess.value = "";
+
+  try {
+    await galerieStore.modifierMiseEnPage(galerie.id, selectedMode);
+    saveSuccess.value =
+      selectedMode === "slideshow"
+        ? "Mode slideshow enregistré."
+        : "Mode galerie enregistré.";
+  } catch (error) {
+    editForm.value.modeMiseEnPage = currentMode;
+    saveError.value = "Impossible de modifier le mode d'affichage.";
   }
 };
 
@@ -402,6 +439,21 @@ watch(
               </label>
             </div>
 
+            <div class="mode-panel">
+              <label class="field-label" for="layout-mode"
+                >Mode d'affichage</label
+              >
+              <select
+                id="layout-mode"
+                v-model="editForm.modeMiseEnPage"
+                class="edit-input mode-select"
+                @change="handleLayoutModeChange"
+              >
+                <option value="grille">Galerie classique</option>
+                <option value="slideshow">Slideshow</option>
+              </select>
+            </div>
+
             <div class="access-panel">
               <h3>Accès client</h3>
               <div class="access-row">
@@ -460,12 +512,33 @@ watch(
 
           <div v-if="authStore.user" class="stock-container">
             <div class="stock-header">
-              <div>
+              <div class="stock-header-copy">
                 <h2>Stock photo</h2>
                 <p>
-                  Photos déjà uploadées, prêtes à être ajoutées à une galerie.
+                  {{ stockPhotosCount }} photo(s) déjà uploadée(s), prêtes à
+                  être ajoutées à une galerie.
                 </p>
               </div>
+              <button
+                type="button"
+                class="stock-toggle-btn"
+                :aria-expanded="!stockPanelCollapsed"
+                aria-controls="stock-panel-content"
+                @click="stockPanelCollapsed = !stockPanelCollapsed"
+              >
+                {{
+                  stockPanelCollapsed ? "Afficher le stock" : "Replier le stock"
+                }}
+              </button>
+            </div>
+
+            <div
+              id="stock-panel-content"
+              :class="[
+                'stock-panel-content',
+                { collapsed: stockPanelCollapsed },
+              ]"
+            >
               <PhotoSearchField
                 v-model="stockSearchQuery"
                 id="stock-search"
@@ -473,85 +546,102 @@ watch(
                 placeholder="Ex: portrait, mer, famille..."
                 class="stock-search"
               />
-            </div>
 
-            <div v-if="stockLoading" class="no-photos">
-              <div class="spinner"></div>
-              Chargement du stock...
-            </div>
+              <div v-if="stockLoading" class="no-photos stock-state">
+                <div class="spinner"></div>
+                Chargement du stock...
+              </div>
 
-            <div v-else-if="stockPhotos.length === 0" class="no-photos">
-              <div class="empty-icon">🗂️</div>
-              <p>Aucune photo dans le stock pour le moment.</p>
-            </div>
-
-            <div v-else-if="filteredStockPhotos.length === 0" class="no-photos">
-              <div class="empty-icon">🔎</div>
-              <p>Aucune photo ne correspond à votre recherche.</p>
-            </div>
-
-            <div v-else class="stock-grid">
-              <PhotoThumbnailCard
-                v-for="photo in filteredStockPhotos"
-                :key="photo.id"
-                :photo="photo"
-                :show-title="true"
-                class="stock-photo-card"
+              <div
+                v-else-if="stockPhotos.length === 0"
+                class="no-photos stock-state"
               >
-                <template #actions="{ photo: stockPhoto }">
-                  <button
-                    class="cover-stock-btn"
-                    :class="{ selected: currentCoverPhotoId === stockPhoto.id }"
-                    :disabled="isSavingCoverPhoto"
-                    @click="choisirPhotoEntete(stockPhoto.id)"
-                  >
-                    {{
-                      currentCoverPhotoId === stockPhoto.id
-                        ? "Photo d'entête"
-                        : "Choisir comme entête"
-                    }}
-                  </button>
-                  <button
-                    class="add-stock-btn"
-                    @click="addStockPhotoToGalerie(stockPhoto.id)"
-                  >
-                    Ajouter à cette galerie
-                  </button>
-                </template>
-              </PhotoThumbnailCard>
+                <div class="empty-icon">🗂️</div>
+                <p>Aucune photo dans le stock pour le moment.</p>
+              </div>
+
+              <div
+                v-else-if="filteredStockPhotos.length === 0"
+                class="no-photos stock-state"
+              >
+                <div class="empty-icon">🔎</div>
+                <p>Aucune photo ne correspond à votre recherche.</p>
+              </div>
+
+              <div v-else class="stock-grid">
+                <PhotoThumbnailCard
+                  v-for="photo in filteredStockPhotos"
+                  :key="photo.id"
+                  :photo="photo"
+                  :show-title="true"
+                  variant="compact"
+                  class="stock-photo-card"
+                >
+                  <template #actions="{ photo: stockPhoto }">
+                    <button
+                      class="cover-stock-btn"
+                      :class="{
+                        selected: currentCoverPhotoId === stockPhoto.id,
+                      }"
+                      :disabled="isSavingCoverPhoto"
+                      @click="choisirPhotoEntete(stockPhoto.id)"
+                    >
+                      {{
+                        currentCoverPhotoId === stockPhoto.id
+                          ? "Photo d'entête"
+                          : "Choisir comme entête"
+                      }}
+                    </button>
+                    <button
+                      class="add-stock-btn"
+                      @click="addStockPhotoToGalerie(stockPhoto.id)"
+                    >
+                      Ajouter à cette galerie
+                    </button>
+                  </template>
+                </PhotoThumbnailCard>
+              </div>
             </div>
           </div>
         </div>
 
         <!-- Section des photos -->
         <div class="photos-container">
-          <div
-            v-if="
-              !galerieStore.currentGalerie.photos ||
-              galerieStore.currentGalerie.photos.length === 0
-            "
-            class="no-photos"
-          >
-            <div class="empty-icon">📷</div>
-            <p>Cette galerie ne contient pas encore de photos.</p>
-          </div>
+          <GallerySlideshow
+            v-if="currentLayoutMode === 'slideshow'"
+            :photos="galerieStore.currentGalerie.photos || []"
+            :fallback-src="photoFallback"
+          />
 
-          <div v-else class="photos-grid">
+          <template v-else>
             <div
-              v-for="(photo, index) in galerieStore.currentGalerie.photos"
-              :key="(photo as any).id || index"
-              class="photo-item"
+              v-if="
+                !galerieStore.currentGalerie.photos ||
+                galerieStore.currentGalerie.photos.length === 0
+              "
+              class="no-photos"
             >
-              <img
-                :src="resolvePhotoSrc(photo as any)"
-                :alt="(photo as any).titre || 'Photo de la galerie'"
-                loading="lazy"
-              />
-              <div v-if="(photo as any).titre" class="photo-caption">
-                {{ (photo as any).titre }}
+              <div class="empty-icon">📷</div>
+              <p>Cette galerie ne contient pas encore de photos.</p>
+            </div>
+
+            <div v-else class="photos-grid">
+              <div
+                v-for="(photo, index) in galerieStore.currentGalerie.photos"
+                :key="(photo as any).id || index"
+                class="photo-item"
+              >
+                <img
+                  :src="resolvePhotoSrc(photo as any)"
+                  :alt="(photo as any).titre || 'Photo de la galerie'"
+                  loading="lazy"
+                />
+                <div v-if="(photo as any).titre" class="photo-caption">
+                  {{ (photo as any).titre }}
+                </div>
               </div>
             </div>
-          </div>
+          </template>
         </div>
       </div>
     </main>
@@ -759,6 +849,14 @@ watch(
   min-height: 96px;
 }
 
+.mode-panel {
+  margin-bottom: 1rem;
+}
+
+.mode-select {
+  appearance: none;
+}
+
 .publish-row {
   display: flex;
   justify-content: space-between;
@@ -908,10 +1006,14 @@ watch(
 .stock-header {
   display: flex;
   justify-content: space-between;
-  align-items: end;
+  align-items: center;
   gap: 1rem;
   margin-bottom: 1.5rem;
   flex-wrap: wrap;
+}
+
+.stock-header-copy {
+  min-width: 0;
 }
 
 .stock-header h2 {
@@ -924,16 +1026,60 @@ watch(
   color: #9ca3af;
 }
 
+.stock-toggle-btn {
+  flex: 0 0 auto;
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  background: rgba(15, 23, 42, 0.8);
+  color: #e2e8f0;
+  border-radius: 999px;
+  padding: 0.55rem 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.stock-toggle-btn:hover {
+  border-color: rgba(59, 130, 246, 0.5);
+  color: #fff;
+}
+
+.stock-panel-content {
+  display: grid;
+  gap: 1rem;
+}
+
+.stock-panel-content.collapsed {
+  display: none;
+}
+
 .stock-search {
-  min-width: 260px;
-  flex: 0 1 320px;
+  min-width: 220px;
+  max-width: 320px;
+  width: 100%;
 }
 
 .stock-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
-  gap: 0.9rem;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 0.7rem;
   align-items: start;
+}
+
+.stock-photo-card :deep(.photo-image.compact) {
+  height: 96px;
+}
+
+.stock-photo-card :deep(.photo-meta.compact) {
+  padding: 0.4rem 0.55rem;
+  font-size: 0.76rem;
+}
+
+.stock-photo-card :deep(.photo-actions.compact) {
+  padding: 0.4rem 0.55rem 0.55rem;
+}
+
+.stock-state {
+  margin-top: 0.25rem;
 }
 
 .no-photos {
@@ -1002,13 +1148,13 @@ watch(
 }
 
 .cover-stock-btn {
-  padding: 0.35rem 0.65rem;
+  padding: 0.3rem 0.55rem;
   border: 1px solid rgba(16, 185, 129, 0.35);
   background: rgba(16, 185, 129, 0.12);
   color: #bbf7d0;
   border-radius: 999px;
   font-weight: 600;
-  font-size: 0.78rem;
+  font-size: 0.72rem;
   cursor: pointer;
 }
 
@@ -1018,13 +1164,13 @@ watch(
 }
 
 .add-stock-btn {
-  padding: 0.35rem 0.65rem;
+  padding: 0.3rem 0.55rem;
   border: 1px solid rgba(59, 130, 246, 0.35);
   background: rgba(59, 130, 246, 0.12);
   color: #bfdbfe;
   border-radius: 999px;
   font-weight: 600;
-  font-size: 0.78rem;
+  font-size: 0.72rem;
   cursor: pointer;
   transition: all 0.2s ease;
 }
