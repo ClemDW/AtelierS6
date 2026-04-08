@@ -17,7 +17,8 @@ class StorageService
     private string $bucket;
     private PDO $db;
 
-    public function __construct(S3Client $client, S3Client $s3_external_client, string $bucket, PDO $db) {
+    public function __construct(S3Client $client, S3Client $s3_external_client, string $bucket, PDO $db)
+    {
         $this->s3_internal_client = $client;
         $this->s3_external_client = $s3_external_client;
         $this->bucket = $bucket;
@@ -54,7 +55,7 @@ class StorageService
                 VALUES (:owner_id, :mime_type, :taille_mo, :nom_original, :cle_s3, :titre)
                 RETURNING id
             ");
-            
+
             $stmt->execute([
                 ':owner_id' => $owner_id,
                 ':mime_type' => $mime_type,
@@ -74,7 +75,8 @@ class StorageService
         }
     }
 
-    public function getPhotoStreamAndMimeType(string $photo_id): array {
+    public function getPhotoStreamAndMimeType(string $photo_id): array
+    {
         try {
             // 1. Récupérer la clé S3 et MimeType en BDD
             $stmt = $this->db->prepare("SELECT cle_s3, mime_type FROM photo WHERE id = :id");
@@ -98,7 +100,7 @@ class StorageService
                 'stream' => $result['Body'],
                 'mime_type' => $mime_type
             ];
-            
+
         } catch (S3Exception $e) {
             throw new \Exception('Erreur S3 lors de la récupération : ' . $e->getMessage());
         }
@@ -119,7 +121,6 @@ class StorageService
         foreach ($rows as $row) {
             $photos[] = [
                 'id' => (string) ($row['id'] ?? ''),
-                'url' => $this->getPresignedUrl((string) ($row['cle_s3'] ?? '')),
                 'titre' => (string) ($row['titre'] ?? ''),
                 'nom_original' => (string) ($row['nom_original'] ?? ''),
                 'mime_type' => (string) ($row['mime_type'] ?? ''),
@@ -129,12 +130,13 @@ class StorageService
         return $photos;
     }
 
-    public function store(InputPhotoDTO $dto): OutputPhotoDTO {
+    public function store(InputPhotoDTO $dto): OutputPhotoDTO
+    {
         try {
             $photoId = $this->generateUuid();
             $extension = $this->mimeToExtension($dto->mimeType);
             $key = sprintf('users/%s/%s.%s', $dto->ownerId, $photoId, $extension);
-            
+
             // 1. Stockage dans S3 avec métadonnées
             $this->s3_internal_client->putObject([
                 'Bucket' => $this->bucket,
@@ -154,7 +156,7 @@ class StorageService
                 INSERT INTO photo (id, owner_id, mime_type, taille_mo, nom_original, cle_s3, titre) 
                 VALUES (:id, :owner_id, :mime_type, :taille_mo, :nom_original, :cle_s3, :titre)
             ");
-            
+
             $stmt->execute([
                 ':id' => $photoId,
                 ':owner_id' => $dto->ownerId,
@@ -164,10 +166,10 @@ class StorageService
                 ':cle_s3' => $key,
                 ':titre' => $dto->titre
             ]);
-            
+
             // 3. Génération de l'URL pré-signée
             $url = $this->getPresignedUrl($key);
-            
+
             return new OutputPhotoDTO($photoId, $key, $url);
         } catch (\Aws\S3\Exception\S3Exception $e) {
             throw new StorageServiceException('Erreur S3 lors du stockage : ' . $e->getMessage(), 0, $e);
@@ -176,7 +178,8 @@ class StorageService
         }
     }
 
-    public function getPresignedUrl(string $key): string {
+    public function getPresignedUrl(string $key): string
+    {
         try {
             $cmd = $this->s3_external_client->getCommand('GetObject', [
                 'Bucket' => $this->bucket,
@@ -186,21 +189,23 @@ class StorageService
             $request = $this->s3_external_client->createPresignedRequest($cmd, '+20 minutes');
             return (string) $request->getUri();
         } catch (\Aws\S3\Exception\S3Exception $e) {
-             throw new StorageServiceException('Erreur S3 lors de la création de l\'URL : ' . $e->getMessage(), 0, $e);
+            throw new StorageServiceException('Erreur S3 lors de la création de l\'URL : ' . $e->getMessage(), 0, $e);
         }
     }
 
-    private function mimeToExtension(string $mime): string {
+    private function mimeToExtension(string $mime): string
+    {
         return match ($mime) {
             'image/jpeg' => 'jpg',
-            'image/png'  => 'png',
+            'image/png' => 'png',
             'image/webp' => 'webp',
-            'image/gif'  => 'gif',
-            default      => 'bin',
+            'image/gif' => 'gif',
+            default => 'bin',
         };
     }
 
-    private function generateUuid(): string {
+    private function generateUuid(): string
+    {
         return Uuid::uuid4()->toString();
     }
 }

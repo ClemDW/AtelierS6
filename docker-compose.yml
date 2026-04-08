@@ -136,7 +136,7 @@ services:
     image: rabbitmq:4-management
     ports:
       - "${RABBITMQ_MANAGEMENT_PORT:-11670}:15670"
-      - "${RABBITMQ_PORT:-11671}:5670"
+      - "${RABBITMQ_PORT:-11671}:5672"
     healthcheck:
       test: rabbitmq-diagnostics -q ping
       interval: 8s
