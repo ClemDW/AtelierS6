@@ -36,6 +36,7 @@ return function (App $app): App {
     $app->patch('/galeries/{id}/mise-en-page', ModifierMiseEnPageAction::class);
     $app->post('/galeries/{id}/photos', AjouterPhotoAction::class);
     $app->delete('/galeries/{id}/photos/{photoId}', RetirerPhotoAction::class);
+    $app->delete('/galeries/{id}', photopro\api\actions\SupprimerGalerieAction::class);
     $app->post('/galeries/code', AfficherGalerieCodeAction::class);
 
     return $app;

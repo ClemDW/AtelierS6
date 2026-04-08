@@ -8,21 +8,26 @@ class GaleriesListeDTO
     public string $id;
     public string $titre;
     public string $description;
-    public string $dateCreation;
+    public string $date_creation;
+    public string $type_galerie;
+    public bool $est_publiee;
     public string $url;
 
     public function __construct(
         string $id,
         string $titre,
         string $description,
-        string $dateCreation,
+        string $date_creation,
+        string $type_galerie,
+        bool $est_publiee,
         string $url
     ) {
         $this->id = $id;
         $this->titre = $titre;
         $this->description = $description;
-        $this->dateCreation = $dateCreation;
+        $this->date_creation = $date_creation;
+        $this->type_galerie = $type_galerie;
+        $this->est_publiee = $est_publiee;
         $this->url = $url;
     }
-
 }

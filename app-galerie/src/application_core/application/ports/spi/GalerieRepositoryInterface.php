@@ -17,4 +17,5 @@ interface GalerieRepositoryInterface
     public function modifierMiseEnPage(string $galerieId, string $miseEnPage): void;
     public function getGalerieById(string $id): ?Galerie;
     public function creerGalerie(Galerie $galerie): Galerie;
+    public function supprimerGalerie(string $id): void;
 }

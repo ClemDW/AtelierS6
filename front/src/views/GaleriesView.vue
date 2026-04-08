@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useGalerieStore } from '../stores/galerie'
+import { useAuthStore } from '../stores/auth'
 
 const galerieStore = useGalerieStore()
+const authStore = useAuthStore()
 
 const isLoading = ref(true)
 const errorMessage = ref('')
@@ -29,7 +31,8 @@ onMounted(() => {
     <header class="header">
       <div class="logo">Photo<span class="highlight">Pro</span></div>
       <nav>
-        <RouterLink :to="{ name: 'login' }" class="nav-link">Se connecter</RouterLink>
+        <RouterLink v-if="!authStore.isAuthenticated" :to="{ name: 'login' }" class="nav-link">Se connecter</RouterLink>
+        <RouterLink v-else :to="{ name: 'home' }" class="nav-link studio-link">Mon espace studio →</RouterLink>
       </nav>
     </header>
 

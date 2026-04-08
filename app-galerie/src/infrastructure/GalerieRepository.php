@@ -173,17 +173,11 @@ class GalerieRepository implements GalerieRepositoryInterface
 
         foreach ($galerie->getPhotos() as $photo) {
             $stmtPhoto = $this->pdo->prepare(
-                'INSERT INTO galerie_photo (galerie_id, url, mime_type, taille_mo, nom_original, cle_s3, titre, date_upload) VALUES (:galerie_id, :url, :mime_type, :taille_mo, :nom_original, :cle_s3, :titre, :date_upload)'
+                'INSERT INTO galerie_photo (galerie_id, photo_id) VALUES (:galerie_id, :photo_id)'
             );
             $stmtPhoto->execute([
                 'galerie_id' => $galerie->getId(),
-                'url' => $photo->getUrl(),
-                'mime_type' => $photo->getMimeType(),
-                'taille_mo' => $photo->getTailleMo(),
-                'nom_original' => $photo->getNomOriginal(),
-                'cle_s3' => $photo->getCleS3(),
-                'titre' => $photo->getTitre(),
-                'date_upload' => $photo->getDateUpload()
+                'photo_id'   => is_string($photo) ? $photo : $photo->getId()
             ]);
         }
 
@@ -255,5 +249,16 @@ class GalerieRepository implements GalerieRepositoryInterface
     {
         $stmt = $this->pdo->prepare('UPDATE galerie SET mode_mise_en_page = :mode WHERE id = :id');
         $stmt->execute(['mode' => $miseEnPage, 'id' => $galerieId]);
+    }
+
+    public function supprimerGalerie(string $id): void
+    {
+        // Suppression manuelle des dépendances car pas de ON DELETE CASCADE
+        $this->pdo->prepare('DELETE FROM invitation WHERE galerie_id = :id')->execute(['id' => $id]);
+        $this->pdo->prepare('DELETE FROM galerie_photo WHERE galerie_id = :id')->execute(['id' => $id]);
+        
+        // Suppression de la galerie
+        $stmt = $this->pdo->prepare('DELETE FROM galerie WHERE id = :id');
+        $stmt->execute(['id' => $id]);
     }
 }

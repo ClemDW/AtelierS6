@@ -58,6 +58,9 @@ class UploadAction
                 $title = null;
             }
         }
+        if ($title === null) {
+            $title = $clientFileName;
+        }
 
         // 2. Erreur d'upload PHP ?
         if ($upload->getError() !== UPLOAD_ERR_OK) {
@@ -90,29 +93,32 @@ class UploadAction
             // stockage dans le storage service via le DTO
             $outputDTO = $this->storageService->store($inputDTO);
 
-            $event = [
-                'event_type' => 'photo.uploaded',
-                'timestamp' => date(DATE_ATOM),
-                'photo' => [
-                    'id' => $outputDTO->photoId,
-                    'owner_id' => (string) $photograph_id,
-                    'mime_type' => $mimeType,
-                    'taille_mo' => $sizeMo,
-                    'nom_original' => $clientFileName,
-                    'titre' => $title,
-                    'cle_s3' => $outputDTO->key,
-                ],
-            ];
-
-            $this->publisher->publish($event);
+            // 3. Publication de l'événement (Optionnelle : ne doit pas bloquer l'upload)
+            try {
+                $event = [
+                    'event_type' => 'photo.uploaded',
+                    'timestamp' => date(DATE_ATOM),
+                    'photo' => [
+                        'id' => $outputDTO->photoId,
+                        'owner_id' => (string) $photograph_id,
+                        'mime_type' => $mimeType,
+                        'taille_mo' => $sizeMo,
+                        'nom_original' => $clientFileName,
+                        'titre' => $title,
+                        'cle_s3' => $outputDTO->key,
+                    ],
+                ];
+                $this->publisher->publish($event);
+            } catch (\Exception $e) {
+                // On log l'erreur mais on ne bloque pas l'utilisateur
+                error_log("RabbitMQ Error: " . $e->getMessage());
+            }
 
             $photoId = $outputDTO->photoId;
             $key = $outputDTO->key;
             $url = $outputDTO->url;
         } catch (StorageServiceException $e) {
             throw new HttpInternalServerErrorException($request, 'erreur stockage : '. $e->getMessage());
-        } catch (\RuntimeException $e) {
-            throw new HttpInternalServerErrorException($request, 'erreur publication evenement : '. $e->getMessage());
         }
 
         $response->getBody()->write(json_encode([
@@ -121,7 +127,9 @@ class UploadAction
             'url' => $url,
             'queued' => true,
         ]));
-        return $response->withStatus(201);
+        return $response
+            ->withHeader('Content-Type', 'application/json')
+            ->withStatus(201);
 
     }
 

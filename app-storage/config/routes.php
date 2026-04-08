@@ -7,6 +7,7 @@ use Slim\App;
 use photopro\api\middlewares\AuthzMiddleware;
 use storage\api\actions\UploadAction;
 use storage\api\actions\GetPhotoAction;
+use storage\api\actions\ListPhotosAction;
 
 return function (App $app): App {
 
@@ -18,6 +19,7 @@ return function (App $app): App {
     // Route publique
     $app->post('/users/{id}/photos', UploadAction::class);
     $app->get('/photos/{id}', GetPhotoAction::class);
+    $app->get('/users/{id}/photos', ListPhotosAction::class);
 
     // Routes protégées par AuthzMiddleware
 

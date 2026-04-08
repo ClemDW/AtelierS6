@@ -12,10 +12,11 @@ $container = $builder->build();
 $app = AppFactory::createFromContainer($container);
 $app->addBodyParsingMiddleware();
 $app->addRoutingMiddleware();
-$app->add(CorsMiddleware::class);
-
 $errorMiddleware = $app->addErrorMiddleware($container->get('displayErrorDetails'), false, false);
 $errorMiddleware->getDefaultErrorHandler()->forceContentType('application/json');
+
+// Add CORS after error middleware so it wraps all responses, including errors.
+$app->add(CorsMiddleware::class);
 
 $app = (require_once __DIR__ . '/routes.php')($app);
 

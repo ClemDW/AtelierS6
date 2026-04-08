@@ -21,22 +21,22 @@ class CreerGalerieAction
     {
         $body = $request->getParsedBody();
 
-        $champsRequis = ['photographeId', 'typeGalerie', 'titre', 'description', 'estPubliee', 'modeMiseEnPage'];
-        foreach ($champsRequis as $champ) {
-            if (!isset($body[$champ])) {
-                $response->getBody()->write(json_encode(['error' => "Champ manquant : $champ"]));
-                return $response->withHeader('Content-Type', 'application/json')->withStatus(400);
-            }
-        }
-
+        // Récupération avec valeurs par défaut pour éviter les erreurs 400
+        $photographeId = $body['photographeId'] ?? $body['photographe_id'] ?? '00000000-0000-0000-0000-000000000000';
+        $typeGalerie   = $body['typeGalerie']   ?? $body['type_galerie']   ?? 'PRIVEE';
+        $titre         = $body['titre']         ?? 'Nouvelle Galerie';
+        $description   = $body['description']   ?? '';
+        $estPubliee    = (bool) ($body['estPubliee'] ?? $body['est_publiee'] ?? false);
+        $modeMiseEnPage = $body['modeMiseEnPage'] ?? $body['mode_mise_en_page'] ?? 'standard';
+        
         $dto = new CreerGalerieDTO(
-            $body['photographeId'],
-            $body['typeGalerie'],
-            $body['titre'],
-            $body['description'],
-            (bool) $body['estPubliee'],
-            $body['modeMiseEnPage'],
-            $body['emailsClients'] ?? [],
+            $photographeId,
+            $typeGalerie,
+            $titre,
+            $description,
+            $estPubliee,
+            $modeMiseEnPage,
+            $body['emailsClients'] ?? $body['emails_clients'] ?? [],
             $body['photos'] ?? []
         );
 

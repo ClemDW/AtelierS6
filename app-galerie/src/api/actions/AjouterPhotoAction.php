@@ -22,13 +22,15 @@ class AjouterPhotoAction
         $galerieId = $args['id'];
         $body = $request->getParsedBody();
 
-        if (empty($body['photoId'])) {
-            $response->getBody()->write(json_encode(['error' => 'Champ manquant : photoId']));
+        $photoId = $body['photoId'] ?? $body['photo_id'] ?? null;
+
+        if (empty($photoId)) {
+            $response->getBody()->write(json_encode(['error' => 'Champ manquant : photoId ou photo_id']));
             return $response->withHeader('Content-Type', 'application/json')->withStatus(400);
         }
 
         try {
-            $this->serviceGalerie->ajouterPhoto($galerieId, $body['photoId']);
+            $this->serviceGalerie->ajouterPhoto($galerieId, $photoId);
         } catch (GalerieNotFoundException $e) {
             $response->getBody()->write(json_encode(['error' => $e->getMessage()]));
             return $response->withHeader('Content-Type', 'application/json')->withStatus(404);

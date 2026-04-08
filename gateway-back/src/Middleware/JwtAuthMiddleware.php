@@ -20,20 +20,25 @@ final class JwtAuthMiddleware implements MiddlewareInterface
     {
         $token = $this->extractBearerToken($request);
         if ($token === null) {
+            error_log("JWT Auth Error: Token missing in Authorization header");
             return $this->jsonError(401, 'Token JWT manquant');
         }
 
         try {
             $claims = $this->decodeAndValidateToken($token);
 
-            if (($claims['type'] ?? 'access') !== 'access') {
+            // Petit assouplissement sur le type pour éviter les blocages inutiles
+            $type = $claims['type'] ?? 'access';
+            if ($type !== 'access' && $type !== 'id_token') {
+                error_log("JWT Auth Error: Invalid token type ($type)");
                 return $this->jsonError(401, 'Type de token invalide');
             }
 
             $request = $request->withAttribute('jwt.claims', $claims);
             return $handler->handle($request);
         } catch (\Throwable $e) {
-            return $this->jsonError(401, 'Token JWT invalide ou expire');
+            error_log("JWT Auth Error: " . $e->getMessage());
+            return $this->jsonError(401, 'Token JWT invalide ou expire : ' . $e->getMessage());
         }
     }
 

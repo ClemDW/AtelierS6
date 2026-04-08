@@ -1,7 +1,6 @@
 <?php
 declare(strict_types=1);
 
-use Dotenv\Dotenv;
 use Psr\Container\ContainerInterface;
 
 
@@ -19,17 +18,6 @@ use photopro\api\provider\jwt\JwtManagerInterface;
 use photopro\api\provider\jwt\JwtManager;
 use photopro\api\middlewares\AuthnMiddleware;
 */
-
-//use photopro\api\actions\SigninAction;
-//use photopro\api\actions\ListerPraticienAction;
-use photopro\api\actions\ListerPraticienRdvAction;
-use photopro\api\actions\ConsulterRdvAction;
-use photopro\api\actions\CreerRdvAction;
-use photopro\api\actions\CreerPatientAction;
-use photopro\api\actions\CreerIndisponibiliteAction;
-
-$dotenv = Dotenv::createImmutable(__DIR__ . '/../../env', 'storage.env');
-$dotenv->load();
 
 return [
 
