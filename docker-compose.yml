@@ -10,7 +10,7 @@ services:
       dockerfile: 8.4-cli.Dockerfile
     working_dir: /app
     ports:
-      - "${GATEWAY_FRONT_PORT:-6067}:3000"
+      - "${GATEWAY_FRONT_PORT:-16067}:3000"
     volumes:
       - ./front-nuxt:/app
       - /app/node_modules
@@ -135,8 +135,8 @@ services:
   rabbitmq:
     image: rabbitmq:4-management
     ports:
-      - "${RABBITMQ_MANAGEMENT_PORT:-15670}:15670"
-      - "${RABBITMQ_PORT:-5670}:5670"
+      - "${RABBITMQ_MANAGEMENT_PORT:-11670}:15670"
+      - "${RABBITMQ_PORT:-11671}:5670"
     healthcheck:
       test: rabbitmq-diagnostics -q ping
       interval: 8s
