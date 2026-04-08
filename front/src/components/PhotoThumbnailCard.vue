@@ -14,15 +14,17 @@ const props = withDefaults(
     fallbackSrc?: string;
     showTitle?: boolean;
     imgClass?: string;
+    variant?: "default" | "compact";
   }>(),
   {
     fallbackSrc: "/img-placeholder.svg",
     showTitle: true,
     imgClass: "",
+    variant: "default",
   },
 );
 
-const { photo, fallbackSrc, showTitle, imgClass } = toRefs(props);
+const { photo, fallbackSrc, showTitle, imgClass, variant } = toRefs(props);
 
 const resolvePhotoSrc = (photo: PhotoLike, fallbackSrc: string) => {
   if (photo?.url) return photo.url;
@@ -49,13 +51,13 @@ const displayTitle = computed(
     <img
       :src="imageSrc"
       :alt="displayTitle"
-      :class="['photo-image', imgClass]"
+      :class="['photo-image', imgClass, { compact: variant === 'compact' }]"
       loading="lazy"
     />
-    <div v-if="showTitle" class="photo-meta">
+    <div v-if="showTitle" :class="['photo-meta', { compact: variant === 'compact' }]">
       {{ displayTitle }}
     </div>
-    <div v-if="$slots.actions" class="photo-actions">
+    <div v-if="$slots.actions" :class="['photo-actions', { compact: variant === 'compact' }]">
       <slot name="actions" :photo="photo" />
     </div>
   </div>
@@ -76,10 +78,19 @@ const displayTitle = computed(
   display: block;
 }
 
+.photo-image.compact {
+  height: 120px;
+}
+
 .photo-meta {
   padding: 0.7rem 0.9rem;
   color: #cbd5e1;
   font-size: 0.9rem;
+}
+
+.photo-meta.compact {
+  padding: 0.5rem 0.65rem;
+  font-size: 0.8rem;
 }
 
 .photo-actions {
@@ -88,5 +99,10 @@ const displayTitle = computed(
   gap: 0.35rem;
   padding: 0.75rem 0.9rem 0.9rem;
   background: rgba(17, 24, 39, 0.95);
+}
+
+.photo-actions.compact {
+  padding: 0.5rem 0.65rem 0.65rem;
+  gap: 0.25rem;
 }
 </style>
