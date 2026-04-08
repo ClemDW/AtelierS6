@@ -9,7 +9,7 @@ services:
       dockerfile: 8.4-cli.Dockerfile
     working_dir: /app
     ports:
-      - "5173:5173"
+      - "11200:5173"
     volumes:
       - ./front:/app
       - /app/node_modules
@@ -22,7 +22,7 @@ services:
       context: build
       dockerfile: 8.4-cli.Dockerfile
     ports:
-      - "${GATEWAY_FRONT_PORT:-6080}:80"
+      - "${GATEWAY_FRONT_PORT:-11201}:80"
     volumes:
       - ./gateway-front:/var/php
     working_dir: /var/php
@@ -35,7 +35,7 @@ services:
       context: build
       dockerfile: 8.4-cli.Dockerfile
     ports:
-      - "${GATEWAY_BACK_PORT:-6081}:80"
+      - "${GATEWAY_BACK_PORT:-11202}:80"
     volumes:
       - ./gateway-back:/var/php
     env_file:
@@ -50,7 +50,7 @@ services:
       context: build
       dockerfile: 8.4-cli.Dockerfile
     ports:
-      - "${AUTH_SERVICE_PORT:-6084}:80"
+      - "${AUTH_SERVICE_PORT:-11203}:80"
     volumes:
       - ./app-auth:/var/php
     env_file:
@@ -67,7 +67,7 @@ services:
       context: build
       dockerfile: 8.4-cli.Dockerfile
     ports:
-      - "${GALERIE_SERVICE_PORT:-6082}:80"
+      - "${GALERIE_SERVICE_PORT:-11204}:80"
     volumes:
       - ./app-galerie:/var/php
     working_dir: /var/php
@@ -83,7 +83,7 @@ services:
       context: build
       dockerfile: 8.4-cli.Dockerfile
     ports:
-      - "${STORAGE_SERVICE_PORT:-6083}:80"
+      - "${STORAGE_SERVICE_PORT:-11205}:80"
     volumes:
       - ./app-storage:/var/php
       - ./sql:/var/data
@@ -101,10 +101,10 @@ services:
   S3:
     image: chrislusf/seaweedfs:latest
     ports:
-      - "${S3_PORT:-8333}:8333"
-      - "${S3_MASTER_PORT:-9333}:9333"
+      - "${S3_PORT:-11206}:8333"
+      - "${S3_MASTER_PORT:-11207}:9333"
       - "${S3_FILER_PORT:-23646}:23646"
-    command: "server -dir=/data -s3 -s3.port=8333 -s3.config=/etc/seaweedfs/s3.json"
+    command: "server -dir=/data -s3 -s3.port=11206 -s3.config=/etc/seaweedfs/s3.json"
     networks:
       - photopro.net
     volumes:
@@ -117,8 +117,8 @@ services:
   rabbitmq:
     image: rabbitmq:4-management
     ports:
-      - "${RABBITMQ_MANAGEMENT_PORT:-15672}:15672"
-      - "${RABBITMQ_PORT:-5672}:5672"
+      - "${RABBITMQ_MANAGEMENT_PORT:-15670}:15670"
+      - "${RABBITMQ_PORT:-5670}:5670"
     healthcheck:
       test: rabbitmq-diagnostics -q ping
       interval: 8s
@@ -127,7 +127,7 @@ services:
     networks:
       - photopro.net
     volumes:
-      - ./rabbitmq.photopro:/var/lib/rabbitmq
+      - rabbitmq_data:/var/lib/rabbitmq
     environment:
       RABBITMQ_DEFAULT_USER: ${RABBITMQ_DEFAULT_USER:-photopro}
       RABBITMQ_DEFAULT_PASS: ${RABBITMQ_DEFAULT_PASS:-photopro}
@@ -142,7 +142,7 @@ services:
     networks:
       - photopro.net
     ports:
-      - "${MAILCATCHER_PORT:-1080}:1080"
+      - "${MAILCATCHER_PORT:-11081}:1080"
 
   ##############################################
   ### Service Mail (consommateur RabbitMQ)
@@ -191,7 +191,7 @@ services:
     image: "postgres:latest"
     env_file: ./env/galeriedb.env
     ports:
-      - "${GALERIE_DB_PORT:-5432}:5432"
+      - "${GALERIE_DB_PORT:-15432}:5432"
     networks:
       - photopro.net
     volumes:
@@ -201,7 +201,7 @@ services:
     image: "postgres:latest"
     env_file: ./env/userdb.env
     ports:
-      - "${USER_DB_PORT:-5433}:5432"
+      - "${USER_DB_PORT:-15433}:5432"
     networks:
       - photopro.net
     volumes:
@@ -211,6 +211,9 @@ services:
   adminer:
     image: adminer
     ports:
-      - "${ADMINER_PORT:-8080}:8080"
+      - "${ADMINER_PORT:-11080}:8080"
     networks:
       - photopro.net
+
+volumes:
+  rabbitmq_data:

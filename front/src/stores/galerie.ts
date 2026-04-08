@@ -24,7 +24,7 @@ export const useGalerieStore = defineStore("galerie", () => {
   // --- LE CLIENT API (Gateway Back) ---
   const api = ofetch.create({
     baseURL:
-      import.meta.env.VITE_API_BACK_URL || "http://localhost:6081/api/back",
+      import.meta.env.VITE_API_BACK_URL || "http://dockertu.iutnc.univ-lorraine.fr:11202/api/back",
     onRequest({ options }) {
       const token = localStorage.getItem("auth_token");
       if (token) {
@@ -39,7 +39,7 @@ export const useGalerieStore = defineStore("galerie", () => {
   // --- LE CLIENT API AUTHENTIFIÉ (Gateway Back) ---
   const authApi = ofetch.create({
     baseURL:
-      import.meta.env.VITE_API_BACK_URL || "http://localhost:6081/api/back",
+      import.meta.env.VITE_API_BACK_URL || "http://dockertu.iutnc.univ-lorraine.fr:11202/api/back",
     onRequest({ options }) {
       const token = localStorage.getItem("auth_token");
       if (token) {

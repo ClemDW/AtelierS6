@@ -21,7 +21,7 @@ const resolvePhotoSrc = (photo: any) => {
   if (photo?.id) {
     const photoBase =
       import.meta.env.VITE_STORAGE_PHOTO_URL ||
-      `${import.meta.env.VITE_API_BACK_URL || "http://localhost:6081/api/back"}/storage/photos`;
+      `${import.meta.env.VITE_API_BACK_URL || "http://dockertu.iutnc.univ-lorraine.fr:11202/api/back"}/storage/photos`;
     return `${photoBase}/${photo.id}`;
   }
   return photoFallback;

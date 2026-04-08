@@ -10,7 +10,7 @@ use storage\infra\messaging\PhotoUploadedPublisher;
 
 return [
     'internal_endpoint' => $_ENV['S3_INTERNAL_ENDPOINT'] ?? getenv('S3_INTERNAL_ENDPOINT') ?? 'http://s3.service:8333',
-    'external_endpoint' => $_ENV['S3_EXTERNAL_ENDPOINT'] ?? getenv('S3_EXTERNAL_ENDPOINT') ?? 'http://localhost:8333',
+    'external_endpoint' => $_ENV['S3_EXTERNAL_ENDPOINT'] ?? getenv('S3_EXTERNAL_ENDPOINT') ?? 'http://dockertu.iutnc.univ-lorraine.fr:8333',
     'region' => $_ENV['S3_REGION'] ?? getenv('S3_REGION') ?? 'seaweedFS',
     'key' => $_ENV['S3_ACCESS_KEY'] ?? getenv('S3_ACCESS_KEY') ?? 'some_access_key',
     'secret' => $_ENV['S3_SECRET_KEY'] ?? getenv('S3_SECRET_KEY') ?? 'some_secret_key',
@@ -23,7 +23,7 @@ return [
     'rabbitmq.routing_key.photo_uploaded' => $_ENV['RABBITMQ_ROUTING_KEY_PHOTO_UPLOADED'] ?? getenv('RABBITMQ_ROUTING_KEY_PHOTO_UPLOADED') ?? 'photo.uploaded',
 
     // Base de données
-    PDO::class => function(ContainerInterface $c) {
+    PDO::class => function (ContainerInterface $c) {
         $host = getenv('DB_HOST') ?: 'galerie.db';
         $port = getenv('DB_PORT') ?: '5432';
         $dbname = getenv('DB_NAME') ?: 'galeriedb';
@@ -31,7 +31,7 @@ return [
         $pass = getenv('DB_PASS') ?: 'admin';
 
         $dsn = "pgsql:host=$host;port=$port;dbname=$dbname";
-        
+
         try {
             return new PDO($dsn, $user, $pass, [
                 PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
@@ -42,32 +42,32 @@ return [
         }
     },
 
-    'S3_internal_client'=> function(ContainerInterface $c){
-        $client= new S3Client([
-            'region'   => $c->get('region'),
+    'S3_internal_client' => function (ContainerInterface $c) {
+        $client = new S3Client([
+            'region' => $c->get('region'),
             'endpoint' => $c->get('internal_endpoint'),
             'use_path_style_endpoint' => true,
             'credentials' => [
-                'key'    => $c->get('key'),
+                'key' => $c->get('key'),
                 'secret' => $c->get('secret'),
             ],
         ]);
         return $client;
     },
-    'S3_external_client'=> function(ContainerInterface $c){
-        $client= new S3Client([
-            'region'   => $c->get('region'),
+    'S3_external_client' => function (ContainerInterface $c) {
+        $client = new S3Client([
+            'region' => $c->get('region'),
             'endpoint' => $c->get('external_endpoint'),
             'use_path_style_endpoint' => true,
             'credentials' => [
-                'key'    => $c->get('key'),
+                'key' => $c->get('key'),
                 'secret' => $c->get('secret'),
             ],
         ]);
         return $client;
     },
-    StorageService::class => function(ContainerInterface $c){
-    return new StorageService($c->get('S3_internal_client'),$c->get('S3_external_client'), $c->get('bucket'), $c->get(PDO::class));
+    StorageService::class => function (ContainerInterface $c) {
+        return new StorageService($c->get('S3_internal_client'), $c->get('S3_external_client'), $c->get('bucket'), $c->get(PDO::class));
     },
     PhotoUploadedPublisher::class => function (ContainerInterface $c) {
         return new PhotoUploadedPublisher(
@@ -79,14 +79,14 @@ return [
             $c->get('rabbitmq.routing_key.photo_uploaded')
         );
     },
-    UploadAction::class => function(ContainerInterface $c){
-    return new UploadAction($c->get(StorageService::class), $c->get(PhotoUploadedPublisher::class));
+    UploadAction::class => function (ContainerInterface $c) {
+        return new UploadAction($c->get(StorageService::class), $c->get(PhotoUploadedPublisher::class));
     },
-    GetPhotoAction::class => function(ContainerInterface $c){
-    return new GetPhotoAction($c->get(StorageService::class));
+    GetPhotoAction::class => function (ContainerInterface $c) {
+        return new GetPhotoAction($c->get(StorageService::class));
     },
-    ListPhotosAction::class=> function(ContainerInterface $c){
-    return new ListPhotosAction($c->get(StorageService::class));
+    ListPhotosAction::class => function (ContainerInterface $c) {
+        return new ListPhotosAction($c->get(StorageService::class));
     }
 
 

@@ -25,6 +25,9 @@ export default defineConfig({
   server: {
     watch: {
       usePolling: true
-    }
+    },
+    allowedHosts: [
+      "docketu.iutnc.univ-lorraine.fr"
+    ]
   }
 })
