@@ -716,12 +716,16 @@ watch(
 
 .edit-panel {
   margin: 0 auto 2rem;
+  width: 100%;
   max-width: 680px;
+  min-width: 0;
   text-align: left;
   background: rgba(17, 24, 39, 0.65);
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 16px;
   padding: 1.25rem;
+  box-sizing: border-box;
+  overflow: hidden;
 }
 
 .edit-panel h2 {
@@ -740,6 +744,7 @@ watch(
 .edit-input,
 .edit-textarea {
   width: 100%;
+  box-sizing: border-box;
   border: 1px solid rgba(148, 163, 184, 0.35);
   background: rgba(15, 23, 42, 0.75);
   color: #f8fafc;
@@ -760,6 +765,7 @@ watch(
   align-items: center;
   gap: 1rem;
   margin-bottom: 1rem;
+  flex-wrap: wrap;
 }
 
 .toggle-label {
@@ -767,6 +773,7 @@ watch(
   align-items: center;
   gap: 0.75rem;
   color: #e2e8f0;
+  flex-wrap: wrap;
 }
 
 .switch {
@@ -846,13 +853,16 @@ watch(
   display: flex;
   gap: 0.6rem;
   align-items: center;
+  flex-wrap: wrap;
 }
 
 .access-row .edit-input {
   margin-bottom: 0;
+  flex: 1 1 240px;
 }
 
 .add-access-btn {
+  flex: 0 0 auto;
   border: 1px solid rgba(59, 130, 246, 0.4);
   background: rgba(59, 130, 246, 0.2);
   color: #dbeafe;
@@ -916,6 +926,7 @@ watch(
 
 .stock-search {
   min-width: 260px;
+  flex: 0 1 320px;
 }
 
 .stock-grid {
