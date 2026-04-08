@@ -28,7 +28,22 @@ export default defineNuxtConfig({
     },
     vuetifyOptions: {
       theme: {
-        defaultTheme: 'light' // Force le thème clair pour éviter le mismatch Serveur (Clair) / Navigateur (Sombre)
+        defaultTheme: 'photoproDark',
+        themes: {
+          photoproDark: {
+            dark: true,
+            colors: {
+              background: '#0b0f19',
+              surface: '#0f172a',
+              primary: '#3b82f6',
+              secondary: '#10b981',
+              error: '#ef4444',
+              info: '#3b82f6',
+              success: '#10b981',
+              warning: '#f59e0b',
+            }
+          }
+        }
       }
     }
   }

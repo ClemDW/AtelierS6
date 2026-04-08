@@ -3,7 +3,7 @@
     <div class="d-flex justify-space-between align-center mb-6">
       <h1 class="text-h3">Galeries Publiques</h1>
       <v-btn
-        color="secondary"
+        color="primary"
         variant="elevated"
         prepend-icon="mdi-lock"
         to="/privee"
@@ -38,10 +38,11 @@
             <p>{{ galerie.description }}</p>
           </v-card-text>
 
-          <v-card-actions>
+          <v-card-actions class="px-4 pb-4">
             <v-btn
               color="primary"
-              variant="text"
+              variant="elevated"
+              block
               :to="`/galeries/${galerie.id}`"
             >
               Voir la galerie

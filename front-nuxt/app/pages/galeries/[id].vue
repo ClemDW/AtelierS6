@@ -5,7 +5,7 @@
   
   <div v-else-if="error" class="text-center py-10">
     <v-alert type="error" title="Erreur de chargement" text="Impossible de charger la galerie."></v-alert>
-    <v-btn class="mt-4" to="/galeries" color="primary">Retour à la liste</v-btn>
+    <v-btn class="mt-4" to="/galeries" color="primary" variant="elevated">Retour à la liste</v-btn>
   </div>
 
   <GalerieDisplay 

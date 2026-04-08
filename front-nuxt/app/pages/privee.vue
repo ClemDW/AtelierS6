@@ -36,6 +36,7 @@
                 <v-btn
                   type="submit"
                   color="primary"
+                  variant="elevated"
                   size="x-large"
                   block
                   :loading="loading"
