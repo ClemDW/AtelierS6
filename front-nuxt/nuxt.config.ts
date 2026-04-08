@@ -5,17 +5,13 @@ export default defineNuxtConfig({
   devtools: { enabled: true },
 
   runtimeConfig: {
+    // API accessible côté serveur SSR
+    apiBase: process.env.NUXT_API_BASE || 'http://gatewayfront.photopro',
     public: {
-      apiBase: process.env.NUXT_PUBLIC_API_BASE || '/api',
+      // API et storage accessibles côté client CSR
+      apiBase: process.env.NUXT_PUBLIC_API_BASE || 'http://localhost:6080',
       storageBase: process.env.NUXT_PUBLIC_STORAGE_BASE || 'http://localhost:6083'
     }
-  },
-
-  routeRules: {
-    // Rend possible l'appel de localhost:6067/api/... et le traduit en un appel HTTP docker interne:
-    '/api/**': { proxy: 'http://gatewayfront.photopro/**' },
-    // On proxyfie les images pour éviter les soucis de CORS/Chargement infini sur le navigateur
-    '/proxy-storage/**': { proxy: 'http://service-storage.photopro/**' }
   },
 
   modules: [

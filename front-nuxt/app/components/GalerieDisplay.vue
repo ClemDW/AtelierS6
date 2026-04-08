@@ -1,6 +1,24 @@
 <template>
   <div>
-    <v-btn prepend-icon="mdi-arrow-left" variant="text" :to="backLink" @click="emit('back-click')" class="mb-4">
+    <!-- Modification conditionnelle : Utiliser href ou to en fonction des besoins du SSR -->
+    <v-btn 
+      v-if="useHrefBack" 
+      prepend-icon="mdi-arrow-left" 
+      variant="text" 
+      :href="backLink" 
+      @click="emit('back-click')" 
+      class="mb-4"
+    >
+      {{ backText }}
+    </v-btn>
+    <v-btn 
+      v-else 
+      prepend-icon="mdi-arrow-left" 
+      variant="text" 
+      :to="backLink" 
+      @click="emit('back-click')" 
+      class="mb-4"
+    >
       {{ backText }}
     </v-btn>
 
@@ -102,10 +120,16 @@ const props = defineProps({
   isPrivate: {
     type: Boolean,
     default: false
+  },
+  useHrefBack: {
+    type: Boolean,
+    default: false
   }
 })
 
 const emit = defineEmits(['back-click'])
+
+const config = useRuntimeConfig()
 
 const photos = computed(() => {
   return props.galerie?.photos || []
@@ -114,6 +138,6 @@ const photos = computed(() => {
 const getImageUrl = (photoId) => {
   if (!photoId) return ''
   if (photoId.startsWith('http')) return photoId
-  return `/proxy-storage/photos/${photoId}`
+  return `${config.public.storageBase}/photos/${photoId}`
 }
 </script>
