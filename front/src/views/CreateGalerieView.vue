@@ -19,13 +19,117 @@ const isCreating = ref(false);
 const errorMessage = ref("");
 const successMessage = ref("");
 
+type ApiErrorPayload = {
+  message?: string;
+  error?: string;
+};
+
+type ApiError = {
+  response?: {
+    status?: number;
+    _data?: ApiErrorPayload;
+  };
+  data?: ApiErrorPayload;
+  message?: string;
+};
+
 const canSubmit = computed(() => {
   return titre.value.trim() !== "" && !isCreating.value;
 });
 
+function isValidEmail(email: string): boolean {
+  if (!email.trim()) {
+    return true;
+  }
+
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
+}
+
+function getCreateGalerieErrorMessage(err: unknown): string {
+  const apiError = err as ApiError;
+  const status = apiError?.response?.status;
+  const backendMessage =
+    apiError?.response?._data?.message ||
+    apiError?.response?._data?.error ||
+    apiError?.data?.message ||
+    apiError?.data?.error;
+
+  if (status === 400) {
+    return (
+      backendMessage ||
+      "Les informations saisies sont invalides. Vérifiez le titre et l'email client."
+    );
+  }
+
+  if (status === 401) {
+    return "Votre session a expiré. Reconnectez-vous puis réessayez.";
+  }
+
+  if (status === 403) {
+    return "Vous n'avez pas les droits nécessaires pour créer une galerie.";
+  }
+
+  if (status === 404) {
+    return "Le service de création de galerie est introuvable pour le moment.";
+  }
+
+  if (status === 409) {
+    return backendMessage || "Une galerie avec ces informations existe déjà.";
+  }
+
+  if (status === 413) {
+    return "La requête est trop volumineuse pour être traitée.";
+  }
+
+  if (status === 422) {
+    return (
+      backendMessage || "Certaines données ne respectent pas le format attendu."
+    );
+  }
+
+  if (status === 429) {
+    return "Trop de tentatives de création. Patientez quelques instants puis réessayez.";
+  }
+
+  if (status && status >= 500) {
+    return "Le serveur rencontre un problème temporaire. Réessayez dans quelques instants.";
+  }
+
+  if (apiError?.message?.toLowerCase().includes("fetch")) {
+    return "Connexion impossible au serveur. Vérifiez votre réseau puis réessayez.";
+  }
+
+  return "Impossible de créer la galerie pour le moment. Veuillez réessayer.";
+}
+
+function validateCreateForm(): string | null {
+  if (isCreating.value) {
+    return "La création est déjà en cours. Veuillez patienter.";
+  }
+
+  if (!titre.value.trim()) {
+    return "Le titre de la galerie est obligatoire.";
+  }
+
+  if (!["public", "private"].includes(type_visibilite.value)) {
+    return "Le type de confidentialité sélectionné est invalide.";
+  }
+
+  if (!isValidEmail(emailClient.value)) {
+    return "L'email client n'est pas valide.";
+  }
+
+  return null;
+}
+
 // --- Submit ---
 async function handleSubmit() {
-  if (!canSubmit.value) return;
+  const validationError = validateCreateForm();
+  if (validationError) {
+    errorMessage.value = validationError;
+    successMessage.value = "";
+    return;
+  }
 
   isCreating.value = true;
   errorMessage.value = "";
@@ -33,7 +137,8 @@ async function handleSubmit() {
 
   const userId = authStore.user?.id;
   if (!userId) {
-    errorMessage.value = "Vous devez être connecté pour créer une galerie.";
+    errorMessage.value =
+      "Action impossible : votre profil utilisateur est introuvable. Reconnectez-vous.";
     isCreating.value = false;
     return;
   }
@@ -65,7 +170,7 @@ async function handleSubmit() {
       }
     }, 1200);
   } catch (err) {
-    errorMessage.value = "Impossible de créer la galerie. Veuillez réessayer.";
+    errorMessage.value = getCreateGalerieErrorMessage(err);
   } finally {
     isCreating.value = false;
   }
@@ -175,7 +280,7 @@ function handleLogout() {
             </div>
 
             <div class="input-group">
-              <label for="email-client">Email client (optionnel)</label>
+              <label for="email-client">Email client </label>
               <input
                 type="email"
                 id="email-client"
