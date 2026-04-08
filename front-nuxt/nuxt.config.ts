@@ -13,7 +13,9 @@ export default defineNuxtConfig({
 
   routeRules: {
     // Rend possible l'appel de localhost:6067/api/... et le traduit en un appel HTTP docker interne:
-    '/api/**': { proxy: 'http://gatewayfront.photopro/**' }
+    '/api/**': { proxy: 'http://gatewayfront.photopro/**' },
+    // On proxyfie les images pour éviter les soucis de CORS/Chargement infini sur le navigateur
+    '/proxy-storage/**': { proxy: 'http://service-storage.photopro/**' }
   },
 
   modules: [

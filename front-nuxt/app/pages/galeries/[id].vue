@@ -42,7 +42,7 @@
         <v-card hover>
           <!-- SSR : Les balises img seront pré-rendues par le serveur -->
           <v-img
-            :src="getImageUrl(photo.cleS3)"
+            :src="getImageUrl(photo.id)"
             :alt="photo.titre || photo.nomOriginal"
             cover
             height="300"
@@ -69,7 +69,7 @@ const route = useRoute()
 const config = useRuntimeConfig()
 const galerieId = route.params.id
 
-// Important pour Nuxt : Key d'hydratation unique. Le proxy gère la requête interne proprement
+// Key d'hydratation unique. Le proxy gère la requête interne proprement
 const { data: galerie, error, pending } = await useFetch(`${config.public.apiBase}/galeries/${galerieId}`, {
   key: `galerie-detail-${galerieId}`
 })
@@ -79,14 +79,13 @@ const photos = computed(() => {
   return galerie.value?.photos || []
 })
 
-// Les images S3/Photopro sont accédées via l'URL publique du service de stockage exposé dans docker
-const getImageUrl = (cleS3) => {
-  if (!cleS3) return ''
-  if (cleS3.startsWith('http')) return cleS3
-  return `${config.public.storageBase}/photos/${cleS3}`
+// On utilise notre /proxy-storage/ défini dans nuxt.config pour récupérer l'image directement, adieu localhost:6083 et ses erreurs de navigateur
+const getImageUrl = (photoId) => {
+  if (!photoId) return ''
+  if (photoId.startsWith('http')) return photoId
+  return `/proxy-storage/photos/${photoId}`
 }
 
-// Optionnel: Définir le titre de la page (SEO)
 useHead({
   title: computed(() => galerie.value?.titre ? `${galerie.value.titre} - PhotoPro` : 'Galerie - PhotoPro'),
   meta: [
