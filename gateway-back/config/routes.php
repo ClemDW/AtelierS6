@@ -54,6 +54,9 @@ return function (App $app): App {
     });
 
     $app->group('/api/back', function (\Slim\Routing\RouteCollectorProxy $group) use ($galerieRootProxy, $galeriesProxy, $galerieSingleProxy, $storageProxy, $authProxy) {
+        $group->get('/galeries/{id}/complet', function (Request $request, Response $response, array $args) use ($galerieRootProxy): Response {
+            return $galerieRootProxy($request, $response, ['path' => 'galeries/' . $args['id'] . '/complet']);
+        });
         $group->map(['GET', 'POST', 'PUT', 'PATCH', 'DELETE'], '/galeries[/{path:.*}]', $galeriesProxy);
         $group->map(['GET', 'POST', 'PUT', 'PATCH', 'DELETE'], '/galerie[/{path:.*}]', $galerieSingleProxy);
         $group->get('/photographes/{photographeId}/galeries', function (Request $request, Response $response, array $args) use ($galerieRootProxy): Response {
